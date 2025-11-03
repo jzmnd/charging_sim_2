@@ -1,4 +1,3 @@
-use crate::charging_functions::{end_charging, start_charging};
 use crate::containers::{ChargeProfileList, VehicleList};
 use crate::events::EventType;
 use crate::evse::Site;
@@ -30,10 +29,9 @@ pub fn run(
                     let charge_profile = charge_profile_list
                         .get_charge_profile(&vehicle.charge_profile_id)
                         .unwrap();
-                    start_charging(
+                    charger.start_charging(
                         event.time,
                         vehicle,
-                        charger,
                         charge_profile,
                         &mut event_queue,
                         &mut sessions,
@@ -50,7 +48,7 @@ pub fn run(
                 info!("[t={}s] Vehicle {} unplugged", event.time, event.vehicle_id);
 
                 let charger = site.get_charger_mut(&event.charger_id.unwrap()).unwrap();
-                end_charging(event.time, charger);
+                charger.end_charging(event.time);
 
                 // Start charging the next vehicle in the queue
                 if let Some(next_vehicle_id) = waiting_queue.pop_front() {
@@ -58,10 +56,9 @@ pub fn run(
                     let charge_profile = charge_profile_list
                         .get_charge_profile(&vehicle.charge_profile_id)
                         .unwrap();
-                    start_charging(
+                    charger.start_charging(
                         event.time,
                         vehicle,
-                        charger,
                         charge_profile,
                         &mut event_queue,
                         &mut sessions,
