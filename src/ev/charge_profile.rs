@@ -76,8 +76,18 @@ impl ChargeProfile {
         let idx_max = self.data.len().saturating_sub(1);
 
         match self.binary_search_soc(soc) {
-            None => self.data.first().unwrap().power,
-            Some(i) if i >= idx_max => self.data.last().unwrap().power,
+            None => {
+                self.data
+                    .first()
+                    .expect("Charge profile should not be empty")
+                    .power
+            }
+            Some(i) if i >= idx_max => {
+                self.data
+                    .last()
+                    .expect("Charge profile should not be empty")
+                    .power
+            }
             Some(i) => {
                 let r0 = &self.data[i];
                 let r1 = &self.data[i + 1];
