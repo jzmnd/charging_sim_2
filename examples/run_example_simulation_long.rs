@@ -3,7 +3,7 @@ use charging_sim_2::distributions::ArrivalSampler;
 use charging_sim_2::ev::{ChargeProfile, Vehicle};
 use charging_sim_2::evse::{Charger, Site};
 use charging_sim_2::session::save_to_csv;
-use charging_sim_2::simulation::run;
+use charging_sim_2::simulation::Simulation;
 
 fn main() {
     let charge_profile_list = ChargeProfileList::new(
@@ -51,7 +51,9 @@ fn main() {
         ],
     );
 
-    let sessions = run(site, vehicle_list, charge_profile_list);
+    let mut simulation = Simulation::new(site, vehicle_list, charge_profile_list);
+    simulation.run();
+    let sessions = simulation.sessions;
 
     for session in &sessions {
         println!("{:?}", session);
