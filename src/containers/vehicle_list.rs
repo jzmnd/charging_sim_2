@@ -4,6 +4,9 @@ use std::collections::BinaryHeap;
 use std::collections::HashMap;
 use uuid::Uuid;
 
+///
+/// A list of vehicles including a mapping of vehicle ID to vehicle objects.
+///
 #[derive(Debug)]
 pub struct VehicleList {
     pub id: Uuid,

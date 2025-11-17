@@ -1,6 +1,9 @@
 use serde::Serialize;
 use uuid::Uuid;
 
+///
+/// Charging session data.
+///
 #[derive(Debug, Serialize)]
 pub struct Session {
     pub vehicle: String,

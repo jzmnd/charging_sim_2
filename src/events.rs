@@ -1,12 +1,19 @@
 use std::cmp::Ordering;
 use uuid::Uuid;
 
+///
+/// Charging simulation event type.
+///
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EventType {
     Arrival,
     Unplug,
 }
 
+///
+/// Charging simulation event.
+/// Event occurs at a given simulation time (in seconds).
+///
 #[derive(Debug, Eq)]
 pub struct Event {
     pub time: u64,

@@ -2,6 +2,9 @@ use crate::evse::Charger;
 use std::collections::HashMap;
 use uuid::Uuid;
 
+///
+/// Object that represents an EV charging site.
+///
 #[derive(Debug)]
 pub struct Site {
     pub id: Uuid,

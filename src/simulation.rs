@@ -7,6 +7,9 @@ use log::info;
 use std::collections::{BinaryHeap, VecDeque};
 use uuid::Uuid;
 
+///
+/// An EV charging simulation object.
+///
 #[derive(Debug)]
 pub struct Simulation {
     pub site: Site,

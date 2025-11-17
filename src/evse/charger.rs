@@ -6,6 +6,9 @@ use log::debug;
 use std::collections::BinaryHeap;
 use uuid::Uuid;
 
+///
+/// Object that represents an EV charger.
+///
 #[derive(Debug)]
 pub struct Charger {
     pub id: Uuid,

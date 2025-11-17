@@ -2,6 +2,9 @@ use crate::ev::ChargeProfile;
 use std::collections::HashMap;
 use uuid::Uuid;
 
+///
+/// A list of charge profiles including a mapping of charge profile ID to charge profile objects.
+///
 #[derive(Debug)]
 pub struct ChargeProfileList {
     pub id: Uuid,
