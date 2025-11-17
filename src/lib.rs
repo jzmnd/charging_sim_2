@@ -1,5 +1,6 @@
 pub mod containers;
 pub mod distributions;
+pub mod errors;
 pub mod ev;
 pub mod events;
 pub mod evse;

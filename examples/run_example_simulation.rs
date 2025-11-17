@@ -3,6 +3,7 @@ use charging_sim_2::ev::{ChargeProfile, Vehicle};
 use charging_sim_2::evse::{Charger, Site};
 use charging_sim_2::session::save_to_csv;
 use charging_sim_2::simulation::Simulation;
+use std::process;
 
 fn main() {
     let charge_profiles = vec![
@@ -20,39 +21,45 @@ fn main() {
             .soc_target(0.8)
             .charge_profile_id(cp1_id)
             .arrival_time(5 * 60)
-            .build("v1"),
+            .build("v1")
+            .unwrap(),
         Vehicle::builder()
             .soc_start(0.1)
             .soc_target(0.9)
             .charge_profile_ids(&all_ids)
             .arrival_time(30 * 60)
             .idle_duration_s(1.0 * 60.0)
-            .build("v2"),
+            .build("v2")
+            .unwrap(),
         Vehicle::builder()
             .soc_start(0.15)
             .soc_target(0.5)
             .charge_profile_ids(&all_ids)
             .arrival_time(30 * 60)
             .idle_duration_s(3.0 * 60.0)
-            .build("v3"),
+            .build("v3")
+            .unwrap(),
         Vehicle::builder()
             .soc_start(0.5)
             .soc_target(0.95)
             .charge_profile_id(cp1_id)
             .arrival_time(35 * 60)
-            .build("v4"),
+            .build("v4")
+            .unwrap(),
         Vehicle::builder()
             .soc_start(0.25)
             .soc_target(0.65)
             .charge_profile_id(cp2_id)
             .arrival_time(50 * 60)
             .idle_duration_s(1.0 * 60.0)
-            .build("v5"),
+            .build("v5")
+            .unwrap(),
         Vehicle::builder()
             .charge_profile_id(cp1_id)
             .arrival_time(52 * 60)
             .idle_duration_s(2.0 * 60.0)
-            .build("v6"),
+            .build("v6")
+            .unwrap(),
     ];
     let vehicle_list = VehicleList::new("vl1", vehicles);
 
@@ -69,7 +76,10 @@ fn main() {
     let site = Site::new("s1", chargers);
 
     let mut simulation = Simulation::new(site, vehicle_list, charge_profile_list);
-    simulation.run();
+    if let Err(e) = simulation.run() {
+        eprintln!("Simulation error: {}", e);
+        process::exit(1);
+    };
     let sessions = simulation.sessions;
 
     for session in &sessions {

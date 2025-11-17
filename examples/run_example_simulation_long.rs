@@ -4,6 +4,7 @@ use charging_sim_2::ev::{ChargeProfile, Vehicle};
 use charging_sim_2::evse::{Charger, Site};
 use charging_sim_2::session::save_to_csv;
 use charging_sim_2::simulation::Simulation;
+use std::process;
 
 fn main() {
     let charge_profile_list = ChargeProfileList::new(
@@ -30,7 +31,8 @@ fn main() {
             .charge_profile_ids(&charge_profile_list.all_ids())
             .charge_profile_weights(&[0.4, 0.6])
             .arrival_time(time)
-            .build(&format!("v{:0>5}", i));
+            .build(&format!("v{:0>5}", i))
+            .unwrap();
 
         vehicles.push(v);
     }
@@ -52,7 +54,10 @@ fn main() {
     );
 
     let mut simulation = Simulation::new(site, vehicle_list, charge_profile_list);
-    simulation.run();
+    if let Err(e) = simulation.run() {
+        eprintln!("Simulation error: {}", e);
+        process::exit(1);
+    };
     let sessions = simulation.sessions;
 
     for session in &sessions {

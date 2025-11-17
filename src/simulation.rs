@@ -1,4 +1,5 @@
 use crate::containers::{ChargeProfileList, VehicleList};
+use crate::errors::SimulationError;
 use crate::events::{Event, EventType};
 use crate::evse::Site;
 use crate::session::Session;
@@ -18,7 +19,7 @@ pub struct Simulation {
 
 impl Simulation {
     ///
-    /// Create a new simulation object
+    /// Create a new simulation object.
     ///
     pub fn new(
         site: Site,
@@ -39,7 +40,7 @@ impl Simulation {
     ///
     /// Run the simulation given a site, list of vehicles and list of charge profiles.
     ///
-    pub fn run(&mut self) {
+    pub fn run(&mut self) -> Result<(), SimulationError> {
         while let Some(event) = self.event_queue.pop() {
             match event.event_type {
                 EventType::Arrival => {
@@ -47,18 +48,27 @@ impl Simulation {
 
                     // Find an unoccupied charger otherwise add vehicle to the queue
                     if let Some(charger) = self.site.get_unoccupied_charger_mut() {
-                        let vehicle = self.vehicle_list.get_vehicle(&event.vehicle_id).unwrap();
+                        let vehicle = self
+                            .vehicle_list
+                            .get_vehicle(&event.vehicle_id)
+                            .ok_or_else(|| {
+                                SimulationError::InvalidVehicleId(event.vehicle_id.to_string())
+                            })?;
                         let charge_profile = self
                             .charge_profile_list
                             .get_charge_profile(&vehicle.charge_profile_id)
-                            .unwrap();
+                            .ok_or_else(|| {
+                                SimulationError::InvalidChargeProfileId(
+                                    vehicle.charge_profile_id.to_string(),
+                                )
+                            })?;
                         charger.start_charging(
                             event.time,
                             vehicle,
                             charge_profile,
                             &mut self.event_queue,
                             &mut self.sessions,
-                        );
+                        )?;
                     } else {
                         info!(
                             "[t={}s] Vehicle {} added to queue",
@@ -70,29 +80,40 @@ impl Simulation {
                 EventType::Unplug => {
                     info!("[t={}s] Vehicle {} unplugged", event.time, event.vehicle_id);
 
+                    let charger_id = event.charger_id.ok_or(SimulationError::MissingChargerId)?;
                     let charger = self
                         .site
-                        .get_charger_mut(&event.charger_id.unwrap())
-                        .unwrap();
+                        .get_charger_mut(&charger_id)
+                        .ok_or_else(|| SimulationError::InvalidChargerId(charger_id.to_string()))?;
                     charger.end_charging(event.time);
 
                     // Start charging the next vehicle in the queue
                     if let Some(next_vehicle_id) = self.waiting_queue.pop_front() {
-                        let vehicle = self.vehicle_list.get_vehicle(&next_vehicle_id).unwrap();
+                        let vehicle =
+                            self.vehicle_list
+                                .get_vehicle(&next_vehicle_id)
+                                .ok_or_else(|| {
+                                    SimulationError::InvalidVehicleId(next_vehicle_id.to_string())
+                                })?;
                         let charge_profile = self
                             .charge_profile_list
                             .get_charge_profile(&vehicle.charge_profile_id)
-                            .unwrap();
+                            .ok_or_else(|| {
+                                SimulationError::InvalidChargeProfileId(
+                                    vehicle.charge_profile_id.to_string(),
+                                )
+                            })?;
                         charger.start_charging(
                             event.time,
                             vehicle,
                             charge_profile,
                             &mut self.event_queue,
                             &mut self.sessions,
-                        );
+                        )?;
                     }
                 }
             }
         }
+        Ok(())
     }
 }

@@ -1,10 +1,10 @@
-use uuid::Uuid;
-
+use crate::errors::SimulationError;
 use crate::ev::{ChargeProfile, Vehicle};
 use crate::events::{Event, EventType};
 use crate::session::Session;
 use log::debug;
 use std::collections::BinaryHeap;
+use uuid::Uuid;
 
 #[derive(Debug)]
 pub struct Charger {
@@ -35,10 +35,10 @@ impl Charger {
         charge_profile: &ChargeProfile,
         event_queue: &mut BinaryHeap<Event>,
         sessions: &mut Vec<Session>,
-    ) {
+    ) -> Result<(), SimulationError> {
         let wait_duration_s = now - vehicle.arrival_time;
         let charge_outputs =
-            charge_profile.calculate(vehicle.soc_start, vehicle.soc_target, self.max_power_kw);
+            charge_profile.calculate(vehicle.soc_start, vehicle.soc_target, self.max_power_kw)?;
 
         let unplug_time =
             now + charge_outputs.duration_s.ceil() as u64 + vehicle.idle_duration_s.ceil() as u64;
@@ -76,6 +76,8 @@ impl Charger {
             vehicle_id: vehicle.id,
             charger_id: Some(self.id),
         });
+
+        Ok(())
     }
 
     ///

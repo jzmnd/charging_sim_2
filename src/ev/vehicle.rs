@@ -1,4 +1,5 @@
 use crate::distributions::{sample_charge_profile, sample_idle_time, sample_socs};
+use crate::errors::BuilderError;
 use uuid::Uuid;
 
 #[derive(Debug)]
@@ -116,7 +117,7 @@ impl VehicleBuilder {
     /// Build a named vehicle.
     /// Will sample values for the vehicle properties if not set explicitly.
     ///
-    pub fn build(&self, name: &str) -> Vehicle {
+    pub fn build(&self, name: &str) -> Result<Vehicle, BuilderError> {
         let (soc_start_sampled, soc_target_sampled) = sample_socs(
             self.avg_start_soc.unwrap_or(DEFAULT_AVG_SOC_START),
             self.avg_target_soc.unwrap_or(DEFAULT_AVG_SOC_TARGET),
@@ -138,9 +139,9 @@ impl VehicleBuilder {
                     sample_charge_profile(ids, self.charge_profile_weights.as_deref())
                 })
             })
-            .expect("No charge profile ID available");
+            .ok_or(BuilderError::MissingChargerProfileId)?;
 
-        Vehicle {
+        Ok(Vehicle {
             id: Uuid::new_v4(),
             name: name.to_owned(),
             soc_start: self.soc_start.unwrap_or(soc_start_sampled),
@@ -148,6 +149,6 @@ impl VehicleBuilder {
             charge_profile_id,
             arrival_time: self.arrival_time.unwrap_or(0),
             idle_duration_s,
-        }
+        })
     }
 }
