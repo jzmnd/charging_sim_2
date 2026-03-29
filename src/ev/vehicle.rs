@@ -48,66 +48,109 @@ pub struct VehicleBuilder {
 }
 
 impl VehicleBuilder {
+    ///
+    /// Set the starting SOC for the vehicle.
+    /// Do not set this if you want to sample random SOCs.
+    ///
     pub fn soc_start(mut self, val: f64) -> Self {
         self.soc_start = Some(val);
         self
     }
 
+    ///
+    /// Set the target SOC for the vehicle.
+    /// Do not set this if you want to sample random SOCs.
+    ///
     pub fn soc_target(mut self, val: f64) -> Self {
         self.soc_target = Some(val);
         self
     }
 
+    ///
+    /// Set the average starting SOC for the vehicle to randomly sample a value.
+    ///
     pub fn avg_start_soc(mut self, val: f64) -> Self {
         self.avg_start_soc = Some(val);
         self
     }
 
+    ///
+    /// Set the average target SOC for the vehicle to randomly sample a value.
+    ///
     pub fn avg_target_soc(mut self, val: f64) -> Self {
         self.avg_target_soc = Some(val);
         self
     }
 
+    ///
+    /// Set the shape parameter of the starting SOC distribution for the vehicle.
+    ///
     pub fn soc_kappa_start(mut self, val: f64) -> Self {
         self.soc_kappa_start = Some(val);
         self
     }
 
+    ///
+    /// Set the shape parameter of the target SOC distribution for the vehicle.
+    ///
     pub fn soc_kappa_target(mut self, val: f64) -> Self {
         self.soc_kappa_target = Some(val);
         self
     }
 
+    ///
+    /// Set the unique charge profile ID for the vehicle.
+    /// Do not set this if you want to sample random charge profiles.
+    ///
     pub fn charge_profile_id(mut self, val: Uuid) -> Self {
         self.charge_profile_id = Some(val);
         self
     }
 
+    ///
+    /// Set the list of charge profile IDs to sample from.
+    ///
     pub fn charge_profile_ids(mut self, vals: &[Uuid]) -> Self {
         self.charge_profile_ids = Some(vals.to_vec());
         self
     }
 
+    ///
+    /// Set the weights of charge profile IDs to sample from.
+    ///
     pub fn charge_profile_weights(mut self, vals: &[f64]) -> Self {
         self.charge_profile_weights = Some(vals.to_vec());
         self
     }
 
+    ///
+    /// Set the arrival time of the vehicle.
+    ///
     pub fn arrival_time(mut self, val: u64) -> Self {
         self.arrival_time = Some(val);
         self
     }
 
+    ///
+    /// Set the idle duration of the vehicle after charging.
+    /// Do not set this if you want to sample random a random idle duration.
+    ///
     pub fn idle_duration_s(mut self, val: f64) -> Self {
         self.idle_duration_s = Some(val);
         self
     }
 
+    ///
+    /// Set the average idle duration of the vehicle after charging to randomly sample a value.
+    ///
     pub fn avg_idle_duration_s(mut self, val: f64) -> Self {
         self.avg_idle_duration_s = Some(val);
         self
     }
 
+    ///
+    /// Set the shape parameter of the idle duration distribution for the vehicle.
+    ///
     pub fn idle_duration_shape(mut self, val: f64) -> Self {
         self.idle_duration_shape = Some(val);
         self

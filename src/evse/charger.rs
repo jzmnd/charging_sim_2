@@ -40,8 +40,9 @@ impl Charger {
         sessions: &mut Vec<Session>,
     ) -> Result<(), SimulationError> {
         let wait_duration_s = now - vehicle.arrival_time;
+        let max_power_kw = (self.max_current_a * self.voltage / 1000.0).min(self.max_power_kw);
         let charge_outputs =
-            charge_profile.calculate(vehicle.soc_start, vehicle.soc_target, self.max_power_kw)?;
+            charge_profile.calculate(vehicle.soc_start, vehicle.soc_target, max_power_kw)?;
 
         let unplug_time =
             now + charge_outputs.duration_s.ceil() as u64 + vehicle.idle_duration_s.ceil() as u64;
@@ -93,8 +94,8 @@ impl Charger {
     }
 }
 
-const DEFAULT_MAX_POWER_KW: f64 = 500.0;
-const DEFAULT_MAX_CURRENT_A: f64 = 100.0;
+const DEFAULT_MAX_POWER_KW: f64 = 480.0;
+const DEFAULT_MAX_CURRENT_A: f64 = 1200.0;
 const DEFAULT_VOLTAGE: f64 = 400.0;
 
 #[derive(Debug, Default)]
@@ -105,16 +106,25 @@ pub struct ChargerBuilder {
 }
 
 impl ChargerBuilder {
+    ///
+    /// Set the maximum power (kW) of the charger.
+    ///
     pub fn max_power_kw(mut self, val: f64) -> Self {
         self.max_power_kw = Some(val);
         self
     }
 
+    ///
+    /// Set the maximum deliverable current (A) of the charger.
+    ///
     pub fn max_current_a(mut self, val: f64) -> Self {
         self.max_current_a = Some(val);
         self
     }
 
+    ///
+    /// Set the voltage (V) of the charger.
+    ///
     pub fn voltage(mut self, val: f64) -> Self {
         self.voltage = Some(val);
         self

@@ -1,6 +1,6 @@
 use rand::prelude::IndexedRandom;
-use rand_distr::weighted::WeightedIndex;
 use rand_distr::Distribution;
+use rand_distr::weighted::WeightedIndex;
 use uuid::Uuid;
 
 ///
