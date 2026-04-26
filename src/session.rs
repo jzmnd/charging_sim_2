@@ -18,7 +18,7 @@ pub struct Session {
     pub wait_duration_s: u64,
     pub charge_duration_s: f64,
     pub idle_duration_s: f64,
-    pub max_power_kw: f64,
+    pub peak_power_kw: f64,
     pub energy_kwh: f64,
     pub start_soc: f64,
     pub end_soc: f64,

@@ -68,7 +68,7 @@ impl Charger {
             wait_duration_s,
             charge_duration_s: charge_outputs.duration_s,
             idle_duration_s: vehicle.idle_duration_s,
-            max_power_kw: charge_outputs.peak_power_kw,
+            peak_power_kw: charge_outputs.peak_power_kw,
             energy_kwh: charge_outputs.energy_kwh,
             start_soc: vehicle.soc_start,
             end_soc: vehicle.soc_target,
