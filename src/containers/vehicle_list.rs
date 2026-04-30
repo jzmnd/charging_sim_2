@@ -11,7 +11,7 @@ use uuid::Uuid;
 pub struct VehicleList {
     pub id: Uuid,
     pub name: String,
-    pub vehicles: Vec<Vehicle>,
+    vehicles: Vec<Vehicle>,
     vehicle_map: HashMap<Uuid, usize>,
 }
 

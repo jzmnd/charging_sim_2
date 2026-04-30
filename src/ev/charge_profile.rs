@@ -19,8 +19,8 @@ pub struct ChargingOutput {
 pub struct ChargeProfile {
     pub id: Uuid,
     pub name: String,
-    pub data: Vec<ChargeProfileRecord>,
-    pub battery_capacity_kwh: f64,
+    data: Vec<ChargeProfileRecord>,
+    battery_capacity_kwh: f64,
 }
 
 impl ChargeProfile {

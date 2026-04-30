@@ -16,10 +16,10 @@ pub enum EventType {
 ///
 #[derive(Debug, Eq)]
 pub struct Event {
-    pub time: u64,
-    pub event_type: EventType,
-    pub vehicle_id: Uuid,
-    pub charger_id: Option<Uuid>,
+    pub(crate) time: u64,
+    pub(crate) event_type: EventType,
+    pub(crate) vehicle_id: Uuid,
+    pub(crate) charger_id: Option<Uuid>,
 }
 
 impl Ord for Event {

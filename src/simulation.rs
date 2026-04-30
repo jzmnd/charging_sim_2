@@ -13,11 +13,11 @@ use uuid::Uuid;
 ///
 #[derive(Debug)]
 pub struct Simulation {
-    pub site: Site,
-    pub vehicle_list: VehicleList,
-    pub charge_profile_list: ChargeProfileList,
-    pub event_queue: BinaryHeap<Event>,
-    pub waiting_queue: VecDeque<Uuid>,
+    site: Site,
+    vehicle_list: VehicleList,
+    charge_profile_list: ChargeProfileList,
+    event_queue: BinaryHeap<Event>,
+    waiting_queue: VecDeque<Uuid>,
     pub sessions: Vec<Session>,
 }
 

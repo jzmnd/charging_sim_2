@@ -4,9 +4,9 @@ use rand_distr::{Distribution, Poisson};
 
 #[derive(Debug)]
 pub struct ArrivalSampler {
-    pub hour_weights: [f64; 24],
-    pub day_weights: [f64; 7],
-    pub avg_sessions_per_day: f64,
+    hour_weights: [f64; 24],
+    day_weights: [f64; 7],
+    avg_sessions_per_day: f64,
 }
 
 impl ArrivalSampler {

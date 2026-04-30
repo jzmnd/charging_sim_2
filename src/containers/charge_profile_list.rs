@@ -9,7 +9,7 @@ use uuid::Uuid;
 pub struct ChargeProfileList {
     pub id: Uuid,
     pub name: String,
-    pub charge_profiles: Vec<ChargeProfile>,
+    charge_profiles: Vec<ChargeProfile>,
     charge_profile_map: HashMap<Uuid, usize>,
 }
 
