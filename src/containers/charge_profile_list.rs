@@ -5,10 +5,8 @@ use uuid::Uuid;
 ///
 /// A list of charge profiles including a mapping of charge profile ID to charge profile objects.
 ///
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct ChargeProfileList {
-    pub id: Uuid,
-    pub name: String,
     charge_profiles: Vec<ChargeProfile>,
     charge_profile_map: HashMap<Uuid, usize>,
 }
@@ -17,7 +15,7 @@ impl ChargeProfileList {
     ///
     /// Create a new list of charge profiles.
     ///
-    pub fn new(name: &str, charge_profiles: Vec<ChargeProfile>) -> Self {
+    pub fn new(charge_profiles: Vec<ChargeProfile>) -> Self {
         let charge_profile_map = charge_profiles
             .iter()
             .enumerate()
@@ -25,8 +23,6 @@ impl ChargeProfileList {
             .collect();
 
         Self {
-            id: Uuid::new_v4(),
-            name: name.to_owned(),
             charge_profiles,
             charge_profile_map,
         }
@@ -56,5 +52,21 @@ impl ChargeProfileList {
     ///
     pub fn all_ids(&self) -> Vec<Uuid> {
         self.charge_profile_map.keys().cloned().collect()
+    }
+}
+
+impl FromIterator<ChargeProfile> for ChargeProfileList {
+    fn from_iter<I: IntoIterator<Item = ChargeProfile>>(iter: I) -> Self {
+        Self::new(iter.into_iter().collect())
+    }
+}
+
+impl Extend<ChargeProfile> for ChargeProfileList {
+    fn extend<I: IntoIterator<Item = ChargeProfile>>(&mut self, iter: I) {
+        for profile in iter {
+            let idx = self.charge_profiles.len();
+            self.charge_profile_map.insert(profile.id, idx);
+            self.charge_profiles.push(profile);
+        }
     }
 }

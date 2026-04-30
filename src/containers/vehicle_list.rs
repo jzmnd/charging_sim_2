@@ -7,10 +7,8 @@ use uuid::Uuid;
 ///
 /// A list of vehicles including a mapping of vehicle ID to vehicle objects.
 ///
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct VehicleList {
-    pub id: Uuid,
-    pub name: String,
     vehicles: Vec<Vehicle>,
     vehicle_map: HashMap<Uuid, usize>,
 }
@@ -19,7 +17,7 @@ impl VehicleList {
     ///
     /// Create a new list of vehicles.
     ///
-    pub fn new(name: &str, vehicles: Vec<Vehicle>) -> Self {
+    pub fn new(vehicles: Vec<Vehicle>) -> Self {
         let vehicle_map = vehicles
             .iter()
             .enumerate()
@@ -27,8 +25,6 @@ impl VehicleList {
             .collect();
 
         Self {
-            id: Uuid::new_v4(),
-            name: name.to_owned(),
             vehicles,
             vehicle_map,
         }
@@ -69,5 +65,21 @@ impl VehicleList {
             });
         }
         events
+    }
+}
+
+impl FromIterator<Vehicle> for VehicleList {
+    fn from_iter<I: IntoIterator<Item = Vehicle>>(iter: I) -> Self {
+        Self::new(iter.into_iter().collect())
+    }
+}
+
+impl Extend<Vehicle> for VehicleList {
+    fn extend<I: IntoIterator<Item = Vehicle>>(&mut self, iter: I) {
+        for vehicle in iter {
+            let idx = self.vehicles.len();
+            self.vehicle_map.insert(vehicle.id, idx);
+            self.vehicles.push(vehicle);
+        }
     }
 }

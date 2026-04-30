@@ -5,11 +5,10 @@ use charging_sim_2::simulation::Simulation;
 use std::process;
 
 fn main() {
-    let charge_profiles = vec![
+    let charge_profile_list = ChargeProfileList::new(vec![
         ChargeProfile::from_file("cp1", "data/example_charge_profile_1.csv", 60.0).unwrap(),
         ChargeProfile::from_file("cp2", "data/example_charge_profile_2.csv", 75.0).unwrap(),
-    ];
-    let charge_profile_list = ChargeProfileList::new("cpl1", charge_profiles);
+    ]);
     let cp1_id = charge_profile_list.get_id_by_name("cp1").unwrap();
     let cp2_id = charge_profile_list.get_id_by_name("cp2").unwrap();
     let all_ids = charge_profile_list.all_ids();
@@ -60,7 +59,7 @@ fn main() {
             .build("v6")
             .unwrap(),
     ];
-    let vehicle_list = VehicleList::new("vl1", vehicles);
+    let vehicle_list = VehicleList::new(vehicles);
 
     let chargers: Vec<Charger> = vec![
         Charger::builder()

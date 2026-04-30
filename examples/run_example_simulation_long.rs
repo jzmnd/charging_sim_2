@@ -6,13 +6,10 @@ use charging_sim_2::simulation::Simulation;
 use std::process;
 
 fn main() {
-    let charge_profile_list = ChargeProfileList::new(
-        "cpl1",
-        vec![
-            ChargeProfile::from_file("cp1", "data/example_charge_profile_1.csv", 60.0).unwrap(),
-            ChargeProfile::from_file("cp2", "data/example_charge_profile_2.csv", 75.0).unwrap(),
-        ],
-    );
+    let charge_profile_list = ChargeProfileList::new(vec![
+        ChargeProfile::from_file("cp1", "data/example_charge_profile_1.csv", 60.0).unwrap(),
+        ChargeProfile::from_file("cp2", "data/example_charge_profile_2.csv", 75.0).unwrap(),
+    ]);
 
     let mut vehicles: Vec<Vehicle> = vec![];
 
@@ -35,7 +32,7 @@ fn main() {
         vehicles.push(v);
     }
 
-    let vehicle_list = VehicleList::new("vl1", vehicles);
+    let vehicle_list = VehicleList::new(vehicles);
 
     let site = Site::new(
         "s1",
