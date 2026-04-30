@@ -23,15 +23,3 @@ pub struct Session {
     pub start_soc: f64,
     pub end_soc: f64,
 }
-
-///
-/// Save a list of sessions to .csv
-///
-pub fn save_to_csv(sessions: &[Session], filename: &str) -> Result<(), csv::Error> {
-    let mut wtr = csv::Writer::from_path(filename)?;
-    for session in sessions {
-        wtr.serialize(session)?;
-    }
-    wtr.flush()?;
-    Ok(())
-}

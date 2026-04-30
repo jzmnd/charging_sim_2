@@ -2,7 +2,6 @@ use charging_sim_2::containers::{ChargeProfileList, VehicleList};
 use charging_sim_2::distributions::ArrivalSampler;
 use charging_sim_2::ev::{ChargeProfile, Vehicle};
 use charging_sim_2::evse::{Charger, Site};
-use charging_sim_2::session::save_to_csv;
 use charging_sim_2::simulation::Simulation;
 use std::process;
 
@@ -57,10 +56,11 @@ fn main() {
         eprintln!("Simulation error: {}", e);
         process::exit(1);
     };
-    let sessions = simulation.sessions;
 
-    for session in &sessions {
+    for session in &simulation.sessions {
         println!("{:?}", session);
     }
-    save_to_csv(&sessions, "outputs/example_simulation_long_output.csv").unwrap();
+    simulation
+        .save_sessions_csv("outputs/example_simulation_long_output.csv")
+        .unwrap();
 }

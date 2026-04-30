@@ -5,6 +5,7 @@ use crate::evse::Site;
 use crate::session::Session;
 use log::info;
 use std::collections::{BinaryHeap, VecDeque};
+use std::path::Path;
 use uuid::Uuid;
 
 ///
@@ -117,6 +118,18 @@ impl Simulation {
                 }
             }
         }
+        Ok(())
+    }
+
+    ///
+    /// Save the simulation's sessions to a .csv file.
+    ///
+    pub fn save_sessions_csv<P: AsRef<Path>>(&self, path: P) -> Result<(), csv::Error> {
+        let mut wtr = csv::Writer::from_path(path)?;
+        for session in &self.sessions {
+            wtr.serialize(session)?;
+        }
+        wtr.flush()?;
         Ok(())
     }
 }
