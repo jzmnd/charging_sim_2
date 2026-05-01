@@ -93,6 +93,42 @@ impl Simulation {
                         )?;
                     }
                 }
+                EventType::Renege => {
+                    if let Some(pos) = self
+                        .waiting_queue
+                        .iter()
+                        .position(|id| id == &event.vehicle_id)
+                    {
+                        self.waiting_queue.remove(pos);
+                        let vehicle = self.vehicle_list.get_vehicle(&event.vehicle_id)?;
+                        let charge_profile = self
+                            .charge_profile_list
+                            .get_charge_profile(&vehicle.charge_profile_id)?;
+                        self.sessions.push(Session {
+                            vehicle: vehicle.name.to_owned(),
+                            vehicle_id: vehicle.id,
+                            charge_profile: charge_profile.name.to_owned(),
+                            charge_profile_id: vehicle.charge_profile_id,
+                            charger: None,
+                            charger_id: None,
+                            arrival_time: vehicle.arrival_time,
+                            plugin_time: None,
+                            unplug_time: None,
+                            wait_duration_s: event.time - vehicle.arrival_time,
+                            reneged: true,
+                            charge_duration_s: None,
+                            idle_duration_s: None,
+                            peak_power_kw: None,
+                            energy_kwh: None,
+                            start_soc: vehicle.soc_start,
+                            end_soc: None,
+                        });
+                        info!(
+                            "[t={}s] Vehicle {} reneges queue",
+                            event.time, event.vehicle_id
+                        );
+                    }
+                }
             }
         }
         Ok(())

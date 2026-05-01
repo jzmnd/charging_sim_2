@@ -6,6 +6,8 @@ use charging_sim_2::simulation::Simulation;
 use std::process;
 
 fn main() {
+    env_logger::init();
+
     let mut rng = rand::rng();
 
     let charge_profile_list = ChargeProfileList::new(vec![
@@ -59,9 +61,6 @@ fn main() {
         process::exit(1);
     };
 
-    for session in &simulation.sessions {
-        println!("{:?}", session);
-    }
     simulation
         .save_sessions_csv("outputs/example_simulation_long_output.csv")
         .unwrap();

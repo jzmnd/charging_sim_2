@@ -70,6 +70,12 @@ impl VehicleList {
                 vehicle_id: vehicle.id,
                 charger_id: None,
             });
+            events.push(Event {
+                time: vehicle.arrival_time + vehicle.max_wait_s,
+                event_type: EventType::Renege,
+                vehicle_id: vehicle.id,
+                charger_id: None,
+            });
         }
         events
     }

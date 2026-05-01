@@ -7,6 +7,7 @@ use uuid::Uuid;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EventType {
     Arrival,
+    Renege,
     Unplug,
 }
 

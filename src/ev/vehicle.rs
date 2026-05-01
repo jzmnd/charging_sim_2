@@ -12,6 +12,7 @@ pub struct Vehicle {
     pub charge_profile_id: Uuid,
     pub arrival_time: u64,
     pub idle_duration_s: f64,
+    pub max_wait_s: u64,
 }
 
 impl Vehicle {
@@ -31,6 +32,8 @@ const DEFAULT_SOC_KAPPA_TARGET: f64 = 14.0;
 const DEFAULT_AVG_IDLE_DURATION_S: f64 = 120.0;
 const DEFAULT_IDLE_DURATION_SHAPE: f64 = 3.0;
 
+const DEFAULT_MAX_WAIT_S: u64 = 1800;
+
 #[derive(Default)]
 pub struct VehicleBuilder<'a> {
     soc_start: Option<f64>,
@@ -46,6 +49,7 @@ pub struct VehicleBuilder<'a> {
     idle_duration_s: Option<f64>,
     avg_idle_duration_s: Option<f64>,
     idle_duration_shape: Option<f64>,
+    max_wait_s: Option<u64>,
     rng: Option<&'a mut dyn Rng>,
 }
 
@@ -159,6 +163,14 @@ impl<'a> VehicleBuilder<'a> {
     }
 
     ///
+    /// Set the maximum wait time for the vehicle before it leaves the queue.
+    ///
+    pub fn max_wait_s(&mut self, val: u64) -> &mut Self {
+        self.max_wait_s = Some(val);
+        self
+    }
+
+    ///
     /// Set the RNG used by `build` to sample any unset properties.
     /// If unset, `build` falls back to `rand::rng()`.
     ///
@@ -214,6 +226,7 @@ impl<'a> VehicleBuilder<'a> {
             charge_profile_id,
             arrival_time: self.arrival_time.unwrap_or(0),
             idle_duration_s,
+            max_wait_s: self.max_wait_s.unwrap_or(DEFAULT_MAX_WAIT_S),
         })
     }
 }
