@@ -13,15 +13,16 @@ fn main() {
     let cp2_id = charge_profile_list.get_id_by_name("cp2").unwrap();
     let all_ids = charge_profile_list.all_ids();
 
+    let mut vehicle_builder = Vehicle::builder();
     let vehicles: Vec<Vehicle> = vec![
-        Vehicle::builder()
+        vehicle_builder
             .soc_start(0.2)
             .soc_target(0.8)
             .charge_profile_id(cp1_id)
             .arrival_time(5 * 60)
             .build("v1")
             .unwrap(),
-        Vehicle::builder()
+        vehicle_builder
             .soc_start(0.1)
             .soc_target(0.9)
             .charge_profile_ids(&all_ids)
@@ -29,7 +30,7 @@ fn main() {
             .idle_duration_s(1.0 * 60.0)
             .build("v2")
             .unwrap(),
-        Vehicle::builder()
+        vehicle_builder
             .soc_start(0.15)
             .soc_target(0.5)
             .charge_profile_ids(&all_ids)
@@ -37,14 +38,14 @@ fn main() {
             .idle_duration_s(3.0 * 60.0)
             .build("v3")
             .unwrap(),
-        Vehicle::builder()
+        vehicle_builder
             .soc_start(0.5)
             .soc_target(0.95)
             .charge_profile_id(cp1_id)
             .arrival_time(35 * 60)
             .build("v4")
             .unwrap(),
-        Vehicle::builder()
+        vehicle_builder
             .soc_start(0.25)
             .soc_target(0.65)
             .charge_profile_id(cp2_id)
@@ -52,7 +53,7 @@ fn main() {
             .idle_duration_s(1.0 * 60.0)
             .build("v5")
             .unwrap(),
-        Vehicle::builder()
+        vehicle_builder
             .charge_profile_id(cp1_id)
             .arrival_time(52 * 60)
             .idle_duration_s(2.0 * 60.0)

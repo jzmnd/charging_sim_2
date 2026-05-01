@@ -1,5 +1,6 @@
 use crate::distributions::{sample_charge_profile, sample_idle_time, sample_socs};
 use crate::errors::BuilderError;
+use rand::Rng;
 use uuid::Uuid;
 
 #[derive(Debug)]
@@ -17,7 +18,7 @@ impl Vehicle {
     ///
     /// Create a new vehicle builder.
     ///
-    pub fn builder() -> VehicleBuilder {
+    pub fn builder<'a>() -> VehicleBuilder<'a> {
         VehicleBuilder::default()
     }
 }
@@ -30,8 +31,8 @@ const DEFAULT_SOC_KAPPA_TARGET: f64 = 14.0;
 const DEFAULT_AVG_IDLE_DURATION_S: f64 = 120.0;
 const DEFAULT_IDLE_DURATION_SHAPE: f64 = 3.0;
 
-#[derive(Debug, Default)]
-pub struct VehicleBuilder {
+#[derive(Default)]
+pub struct VehicleBuilder<'a> {
     soc_start: Option<f64>,
     soc_target: Option<f64>,
     avg_start_soc: Option<f64>,
@@ -45,14 +46,15 @@ pub struct VehicleBuilder {
     idle_duration_s: Option<f64>,
     avg_idle_duration_s: Option<f64>,
     idle_duration_shape: Option<f64>,
+    rng: Option<&'a mut dyn Rng>,
 }
 
-impl VehicleBuilder {
+impl<'a> VehicleBuilder<'a> {
     ///
     /// Set the starting SOC for the vehicle.
     /// Do not set this if you want to sample random SOCs.
     ///
-    pub fn soc_start(mut self, val: f64) -> Self {
+    pub fn soc_start(&mut self, val: f64) -> &mut Self {
         self.soc_start = Some(val);
         self
     }
@@ -61,7 +63,7 @@ impl VehicleBuilder {
     /// Set the target SOC for the vehicle.
     /// Do not set this if you want to sample random SOCs.
     ///
-    pub fn soc_target(mut self, val: f64) -> Self {
+    pub fn soc_target(&mut self, val: f64) -> &mut Self {
         self.soc_target = Some(val);
         self
     }
@@ -69,7 +71,7 @@ impl VehicleBuilder {
     ///
     /// Set the average starting SOC for the vehicle to randomly sample a value.
     ///
-    pub fn avg_start_soc(mut self, val: f64) -> Self {
+    pub fn avg_start_soc(&mut self, val: f64) -> &mut Self {
         self.avg_start_soc = Some(val);
         self
     }
@@ -77,7 +79,7 @@ impl VehicleBuilder {
     ///
     /// Set the average target SOC for the vehicle to randomly sample a value.
     ///
-    pub fn avg_target_soc(mut self, val: f64) -> Self {
+    pub fn avg_target_soc(&mut self, val: f64) -> &mut Self {
         self.avg_target_soc = Some(val);
         self
     }
@@ -85,7 +87,7 @@ impl VehicleBuilder {
     ///
     /// Set the shape parameter of the starting SOC distribution for the vehicle.
     ///
-    pub fn soc_kappa_start(mut self, val: f64) -> Self {
+    pub fn soc_kappa_start(&mut self, val: f64) -> &mut Self {
         self.soc_kappa_start = Some(val);
         self
     }
@@ -93,7 +95,7 @@ impl VehicleBuilder {
     ///
     /// Set the shape parameter of the target SOC distribution for the vehicle.
     ///
-    pub fn soc_kappa_target(mut self, val: f64) -> Self {
+    pub fn soc_kappa_target(&mut self, val: f64) -> &mut Self {
         self.soc_kappa_target = Some(val);
         self
     }
@@ -102,7 +104,7 @@ impl VehicleBuilder {
     /// Set the unique charge profile ID for the vehicle.
     /// Do not set this if you want to sample random charge profiles.
     ///
-    pub fn charge_profile_id(mut self, val: Uuid) -> Self {
+    pub fn charge_profile_id(&mut self, val: Uuid) -> &mut Self {
         self.charge_profile_id = Some(val);
         self
     }
@@ -110,7 +112,7 @@ impl VehicleBuilder {
     ///
     /// Set the list of charge profile IDs to sample from.
     ///
-    pub fn charge_profile_ids(mut self, vals: &[Uuid]) -> Self {
+    pub fn charge_profile_ids(&mut self, vals: &[Uuid]) -> &mut Self {
         self.charge_profile_ids = Some(vals.to_vec());
         self
     }
@@ -118,7 +120,7 @@ impl VehicleBuilder {
     ///
     /// Set the weights of charge profile IDs to sample from.
     ///
-    pub fn charge_profile_weights(mut self, vals: &[f64]) -> Self {
+    pub fn charge_profile_weights(&mut self, vals: &[f64]) -> &mut Self {
         self.charge_profile_weights = Some(vals.to_vec());
         self
     }
@@ -126,7 +128,7 @@ impl VehicleBuilder {
     ///
     /// Set the arrival time of the vehicle.
     ///
-    pub fn arrival_time(mut self, val: u64) -> Self {
+    pub fn arrival_time(&mut self, val: u64) -> &mut Self {
         self.arrival_time = Some(val);
         self
     }
@@ -135,7 +137,7 @@ impl VehicleBuilder {
     /// Set the idle duration of the vehicle after charging.
     /// Do not set this if you want to sample random a random idle duration.
     ///
-    pub fn idle_duration_s(mut self, val: f64) -> Self {
+    pub fn idle_duration_s(&mut self, val: f64) -> &mut Self {
         self.idle_duration_s = Some(val);
         self
     }
@@ -143,7 +145,7 @@ impl VehicleBuilder {
     ///
     /// Set the average idle duration of the vehicle after charging to randomly sample a value.
     ///
-    pub fn avg_idle_duration_s(mut self, val: f64) -> Self {
+    pub fn avg_idle_duration_s(&mut self, val: f64) -> &mut Self {
         self.avg_idle_duration_s = Some(val);
         self
     }
@@ -151,21 +153,41 @@ impl VehicleBuilder {
     ///
     /// Set the shape parameter of the idle duration distribution for the vehicle.
     ///
-    pub fn idle_duration_shape(mut self, val: f64) -> Self {
+    pub fn idle_duration_shape(&mut self, val: f64) -> &mut Self {
         self.idle_duration_shape = Some(val);
         self
     }
 
     ///
-    /// Build a named vehicle.
-    /// Will sample values for the vehicle properties if not set explicitly.
+    /// Set the RNG used by `build` to sample any unset properties.
+    /// If unset, `build` falls back to `rand::rng()`.
     ///
-    pub fn build(&self, name: &str) -> Result<Vehicle, BuilderError> {
+    pub fn rng<R: Rng + 'a>(&mut self, rng: &'a mut R) -> &mut Self {
+        self.rng = Some(rng);
+        self
+    }
+
+    ///
+    /// Build a named vehicle.
+    /// Will sample values for the vehicle properties if not set explicitly,
+    /// drawing from the configured RNG (or `rand::rng()` if none was set).
+    ///
+    pub fn build(&mut self, name: &str) -> Result<Vehicle, BuilderError> {
+        let mut rng_default;
+        let rng = match self.rng.as_deref_mut() {
+            Some(r) => r,
+            None => {
+                rng_default = rand::rng();
+                &mut rng_default
+            }
+        };
+
         let (soc_start_sampled, soc_target_sampled) = sample_socs(
             self.avg_start_soc.unwrap_or(DEFAULT_AVG_SOC_START),
             self.avg_target_soc.unwrap_or(DEFAULT_AVG_SOC_TARGET),
             self.soc_kappa_start.unwrap_or(DEFAULT_SOC_KAPPA_START),
             self.soc_kappa_target.unwrap_or(DEFAULT_SOC_KAPPA_TARGET),
+            rng,
         );
         let idle_duration_s = self.idle_duration_s.unwrap_or_else(|| {
             sample_idle_time(
@@ -173,13 +195,14 @@ impl VehicleBuilder {
                     .unwrap_or(DEFAULT_AVG_IDLE_DURATION_S),
                 self.idle_duration_shape
                     .unwrap_or(DEFAULT_IDLE_DURATION_SHAPE),
+                rng,
             )
         });
         let charge_profile_id = self
             .charge_profile_id
             .or_else(|| {
                 self.charge_profile_ids.as_ref().and_then(|ids| {
-                    sample_charge_profile(ids, self.charge_profile_weights.as_deref())
+                    sample_charge_profile(ids, self.charge_profile_weights.as_deref(), rng)
                 })
             })
             .ok_or(BuilderError::MissingChargerProfileId)?;

@@ -6,12 +6,12 @@ use charging_sim_2::simulation::Simulation;
 use std::process;
 
 fn main() {
+    let mut rng = rand::rng();
+
     let charge_profile_list = ChargeProfileList::new(vec![
         ChargeProfile::from_file("cp1", "data/example_charge_profile_1.csv", 60.0).unwrap(),
         ChargeProfile::from_file("cp2", "data/example_charge_profile_2.csv", 75.0).unwrap(),
     ]);
-
-    let mut vehicles: Vec<Vehicle> = vec![];
 
     let tod_distr = [
         0.0, 0.0, 0.05, 0.05, 0.1, 0.1, 0.15, 0.25, 0.3, 0.35, 0.4, 0.4, 0.35, 0.35, 0.4, 0.45,
@@ -20,15 +20,20 @@ fn main() {
     let dow_distr = [0.95, 0.8, 0.8, 0.75, 0.8, 0.85, 1.0];
     let avg_sessions_per_day = 23.4;
     let arrival_sampler = ArrivalSampler::new(tod_distr, dow_distr, avg_sessions_per_day);
+    let arrivals = arrival_sampler.sample_arrivals(365, &mut rng);
 
-    for (i, &time) in arrival_sampler.sample_arrivals(365).iter().enumerate() {
-        let v = Vehicle::builder()
-            .charge_profile_ids(&charge_profile_list.all_ids())
-            .charge_profile_weights(&[0.4, 0.6])
+    let mut vehicle_builder = Vehicle::builder();
+    vehicle_builder
+        .charge_profile_ids(&charge_profile_list.all_ids())
+        .charge_profile_weights(&[0.4, 0.6])
+        .rng(&mut rng);
+
+    let mut vehicles: Vec<Vehicle> = Vec::with_capacity(arrivals.len());
+    for (i, &time) in arrivals.iter().enumerate() {
+        let v = vehicle_builder
             .arrival_time(time)
             .build(&format!("v{:0>5}", i))
             .unwrap();
-
         vehicles.push(v);
     }
 

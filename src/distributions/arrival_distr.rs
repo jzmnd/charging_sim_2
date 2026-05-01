@@ -1,4 +1,4 @@
-use rand::RngExt;
+use rand::{Rng, RngExt};
 use rand_distr::weighted::WeightedIndex;
 use rand_distr::{Distribution, Poisson};
 
@@ -25,8 +25,7 @@ impl ArrivalSampler {
     /// Sample arrival times (in seconds) for a given number of days.
     /// Assumes the first day is the first weights in the day_weights array.
     ///
-    pub fn sample_arrivals(&self, num_days: u64) -> Vec<u64> {
-        let mut rng = rand::rng();
+    pub fn sample_arrivals<R: Rng + ?Sized>(&self, num_days: u64, rng: &mut R) -> Vec<u64> {
         let hour_dist = WeightedIndex::new(self.hour_weights).unwrap();
         let day_weights_sum: f64 = self.day_weights.iter().sum();
         let day_weights_scale = if day_weights_sum > 0.0 {
@@ -41,10 +40,10 @@ impl ArrivalSampler {
             let day_weight = self.day_weights[weekday] * day_weights_scale;
 
             let poisson = Poisson::new(self.avg_sessions_per_day * day_weight).unwrap();
-            let sessions = poisson.sample(&mut rng) as u64;
+            let sessions = poisson.sample(rng) as u64;
 
             for _ in 0..sessions {
-                let hour = hour_dist.sample(&mut rng) as u64;
+                let hour = hour_dist.sample(rng) as u64;
                 let minute = rng.random_range(0..60);
                 let second = rng.random_range(0..60);
                 let total_seconds = day * 86400 + hour * 3600 + minute * 60 + second;

@@ -109,7 +109,7 @@ impl ChargerBuilder {
     ///
     /// Set the maximum power (kW) of the charger.
     ///
-    pub fn max_power_kw(mut self, val: f64) -> Self {
+    pub fn max_power_kw(&mut self, val: f64) -> &mut Self {
         self.max_power_kw = Some(val);
         self
     }
@@ -117,7 +117,7 @@ impl ChargerBuilder {
     ///
     /// Set the maximum deliverable current (A) of the charger.
     ///
-    pub fn max_current_a(mut self, val: f64) -> Self {
+    pub fn max_current_a(&mut self, val: f64) -> &mut Self {
         self.max_current_a = Some(val);
         self
     }
@@ -125,7 +125,7 @@ impl ChargerBuilder {
     ///
     /// Set the voltage (V) of the charger.
     ///
-    pub fn voltage(mut self, val: f64) -> Self {
+    pub fn voltage(&mut self, val: f64) -> &mut Self {
         self.voltage = Some(val);
         self
     }
