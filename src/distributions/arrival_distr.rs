@@ -23,7 +23,7 @@ impl ArrivalSampler {
 
     ///
     /// Sample arrival times (in seconds) for a given number of days.
-    /// Assumes the first day is the first weights in the day_weights array.
+    /// Assumes the first day is the first weights in the `day_weights` array.
     ///
     pub fn sample_arrivals(&self, num_days: u64, rng: &mut dyn Rng) -> Vec<u64> {
         let hour_dist = WeightedIndex::new(self.hour_weights).unwrap();

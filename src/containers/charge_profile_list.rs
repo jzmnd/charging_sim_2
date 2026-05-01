@@ -47,14 +47,14 @@ impl ChargeProfileList {
             .iter()
             .find(|c| c.name == name)
             .map(|c| c.id)
-            .ok_or_else(|| SimulationError::InvalidChargeProfileName(name.to_string()))
+            .ok_or_else(|| SimulationError::InvalidChargeProfileName(name.to_owned()))
     }
 
     ///
     /// Fetch all charge profile IDs.
     ///
     pub fn all_ids(&self) -> Vec<Uuid> {
-        self.charge_profile_map.keys().cloned().collect()
+        self.charge_profile_map.keys().copied().collect()
     }
 }
 

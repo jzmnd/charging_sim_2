@@ -201,9 +201,8 @@ impl<'a> VehicleBuilder<'a> {
         let charge_profile_id = self
             .charge_profile_id
             .or_else(|| {
-                self.charge_profile_ids.as_ref().and_then(|ids| {
-                    sample_charge_profile(ids, self.charge_profile_weights.as_deref(), rng)
-                })
+                let ids = self.charge_profile_ids.as_ref()?;
+                sample_charge_profile(ids, self.charge_profile_weights.as_deref(), rng)
             })
             .ok_or(BuilderError::MissingChargerProfileId)?;
 
