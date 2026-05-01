@@ -18,7 +18,7 @@ pub struct Simulation {
     charge_profile_list: ChargeProfileList,
     event_queue: BinaryHeap<Event>,
     waiting_queue: VecDeque<Uuid>,
-    pub sessions: Vec<Session>,
+    sessions: Vec<Session>,
 }
 
 impl Simulation {
@@ -135,7 +135,14 @@ impl Simulation {
     }
 
     ///
-    /// Save the simulation's sessions to a .csv file.
+    /// Get the simulation's session data.
+    ///
+    pub fn get_sessions(&self) -> &[Session] {
+        &self.sessions
+    }
+
+    ///
+    /// Save the simulation's session data to a .csv file.
     ///
     pub fn save_sessions_csv<P: AsRef<Path>>(&self, path: P) -> Result<(), csv::Error> {
         let mut wtr = csv::Writer::from_path(path)?;

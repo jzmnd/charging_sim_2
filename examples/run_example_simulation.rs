@@ -82,7 +82,7 @@ fn main() {
         process::exit(1);
     };
 
-    for session in &simulation.sessions {
+    for session in simulation.get_sessions() {
         println!("{:?}", session);
     }
     simulation
