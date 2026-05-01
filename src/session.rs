@@ -3,7 +3,8 @@ use uuid::Uuid;
 
 ///
 /// Charging session data.
-/// Reneged sessions (vehicle left the waiting queue before being charged)
+/// Reneged sessions (vehicle left the waiting queue before being charged) and
+/// balked sessions (vehicle never joined the queue because it was too long)
 /// have the charger and charging data fields as `None`.
 ///
 #[derive(Debug, Serialize)]
@@ -19,6 +20,7 @@ pub struct Session {
     pub unplug_time: Option<u64>,
     pub wait_duration_s: u64,
     pub reneged: bool,
+    pub balked: bool,
     pub charge_duration_s: Option<f64>,
     pub idle_duration_s: Option<f64>,
     pub peak_power_kw: Option<f64>,

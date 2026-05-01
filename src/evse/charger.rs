@@ -67,6 +67,7 @@ impl Charger {
             unplug_time: Some(unplug_time),
             wait_duration_s,
             reneged: false,
+            balked: false,
             charge_duration_s: Some(charge_outputs.duration_s),
             idle_duration_s: Some(vehicle.idle_duration_s),
             peak_power_kw: Some(charge_outputs.peak_power_kw),

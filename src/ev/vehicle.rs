@@ -13,6 +13,7 @@ pub struct Vehicle {
     pub arrival_time: u64,
     pub idle_duration_s: f64,
     pub max_wait_s: u64,
+    pub max_queue_length: usize,
 }
 
 impl Vehicle {
@@ -33,6 +34,7 @@ const DEFAULT_AVG_IDLE_DURATION_S: f64 = 120.0;
 const DEFAULT_IDLE_DURATION_SHAPE: f64 = 3.0;
 
 const DEFAULT_MAX_WAIT_S: u64 = 1800;
+const DEFAULT_MAX_QUEUE_LENGTH: usize = 10;
 
 #[derive(Default)]
 pub struct VehicleBuilder<'a> {
@@ -50,6 +52,7 @@ pub struct VehicleBuilder<'a> {
     avg_idle_duration_s: Option<f64>,
     idle_duration_shape: Option<f64>,
     max_wait_s: Option<u64>,
+    max_queue_length: Option<usize>,
     rng: Option<&'a mut dyn Rng>,
 }
 
@@ -171,6 +174,16 @@ impl<'a> VehicleBuilder<'a> {
     }
 
     ///
+    /// Set the maximum waiting-queue length the vehicle will tolerate on arrival.
+    /// If the queue is at or above this length when the vehicle arrives it baulks
+    /// (leaves immediately without joining the queue).
+    ///
+    pub fn max_queue_length(&mut self, val: usize) -> &mut Self {
+        self.max_queue_length = Some(val);
+        self
+    }
+
+    ///
     /// Set the RNG used by `build` to sample any unset properties.
     /// If unset, `build` falls back to `rand::rng()`.
     ///
@@ -227,6 +240,7 @@ impl<'a> VehicleBuilder<'a> {
             arrival_time: self.arrival_time.unwrap_or(0),
             idle_duration_s,
             max_wait_s: self.max_wait_s.unwrap_or(DEFAULT_MAX_WAIT_S),
+            max_queue_length: self.max_queue_length.unwrap_or(DEFAULT_MAX_QUEUE_LENGTH),
         })
     }
 }
