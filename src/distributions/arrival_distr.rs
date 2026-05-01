@@ -25,7 +25,7 @@ impl ArrivalSampler {
     /// Sample arrival times (in seconds) for a given number of days.
     /// Assumes the first day is the first weights in the day_weights array.
     ///
-    pub fn sample_arrivals<R: Rng + ?Sized>(&self, num_days: u64, rng: &mut R) -> Vec<u64> {
+    pub fn sample_arrivals(&self, num_days: u64, rng: &mut dyn Rng) -> Vec<u64> {
         let hour_dist = WeightedIndex::new(self.hour_weights).unwrap();
         let day_weights_sum: f64 = self.day_weights.iter().sum();
         let day_weights_scale = if day_weights_sum > 0.0 {

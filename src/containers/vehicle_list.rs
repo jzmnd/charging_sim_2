@@ -1,3 +1,4 @@
+use crate::errors::SimulationError;
 use crate::ev::Vehicle;
 use crate::events::{Event, EventType};
 use std::collections::BinaryHeap;
@@ -40,15 +41,21 @@ impl VehicleList {
     ///
     /// Fetch a vehicle from the list using its ID.
     ///
-    pub fn get_vehicle(&self, id: &Uuid) -> Option<&Vehicle> {
-        self.vehicle_map.get(id).map(|&idx| &self.vehicles[idx])
+    pub fn get_vehicle(&self, id: &Uuid) -> Result<&Vehicle, SimulationError> {
+        self.vehicle_map
+            .get(id)
+            .map(|&idx| &self.vehicles[idx])
+            .ok_or_else(|| SimulationError::InvalidVehicleId(id.to_string()))
     }
 
     ///
     /// Fetch a mutable vehicle from the list using its ID.
     ///
-    pub fn get_vehicle_mut(&mut self, id: &Uuid) -> Option<&mut Vehicle> {
-        self.vehicle_map.get(id).map(|&idx| &mut self.vehicles[idx])
+    pub fn get_vehicle_mut(&mut self, id: &Uuid) -> Result<&mut Vehicle, SimulationError> {
+        self.vehicle_map
+            .get(id)
+            .map(|&idx| &mut self.vehicles[idx])
+            .ok_or_else(|| SimulationError::InvalidVehicleId(id.to_string()))
     }
 
     ///

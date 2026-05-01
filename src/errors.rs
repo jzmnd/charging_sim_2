@@ -9,6 +9,8 @@ pub enum SimulationError {
     InvalidVehicleId(String),
     #[error("Invalid charge profile ID `{0}`")]
     InvalidChargeProfileId(String),
+    #[error("Invalid charge profile name `{0}`")]
+    InvalidChargeProfileName(String),
     #[error("Invalid charger ID `{0}`")]
     InvalidChargerId(String),
     #[error("Missing charger ID from Event")]

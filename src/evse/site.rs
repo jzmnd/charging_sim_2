@@ -1,3 +1,4 @@
+use crate::errors::SimulationError;
 use crate::evse::Charger;
 use std::collections::HashMap;
 use uuid::Uuid;
@@ -55,6 +56,7 @@ impl Site {
 
     ///
     /// Get the first unoccupied charger.
+    /// Returns None if all chargers are occupied.
     ///
     pub fn get_unoccupied_charger(&self) -> Option<&Charger> {
         self.chargers.iter().find(|c| !c.is_busy)
@@ -62,6 +64,7 @@ impl Site {
 
     ///
     /// Get the first unoccupied charger as mutable.
+    /// Returns None if all chargers are occupied.
     ///
     pub fn get_unoccupied_charger_mut(&mut self) -> Option<&mut Charger> {
         self.chargers.iter_mut().find(|c| !c.is_busy)
@@ -70,14 +73,20 @@ impl Site {
     ///
     /// Get a charger from the site using its ID.
     ///
-    pub fn get_charger(&self, id: &Uuid) -> Option<&Charger> {
-        self.charger_map.get(id).map(|&idx| &self.chargers[idx])
+    pub fn get_charger(&self, id: &Uuid) -> Result<&Charger, SimulationError> {
+        self.charger_map
+            .get(id)
+            .map(|&idx| &self.chargers[idx])
+            .ok_or_else(|| SimulationError::InvalidChargerId(id.to_string()))
     }
 
     ///
     /// Get a mutable charger from the site using its ID.
     ///
-    pub fn get_charger_mut(&mut self, id: &Uuid) -> Option<&mut Charger> {
-        self.charger_map.get(id).map(|&idx| &mut self.chargers[idx])
+    pub fn get_charger_mut(&mut self, id: &Uuid) -> Result<&mut Charger, SimulationError> {
+        self.charger_map
+            .get(id)
+            .map(|&idx| &mut self.chargers[idx])
+            .ok_or_else(|| SimulationError::InvalidChargerId(id.to_string()))
     }
 }

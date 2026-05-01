@@ -8,10 +8,10 @@ use uuid::Uuid;
 /// Sample a charge profile ID from a list.
 /// Optionally provide weights for sampling each ID.
 ///
-pub fn sample_charge_profile<R: Rng + ?Sized>(
+pub fn sample_charge_profile(
     ids: &[Uuid],
     weights: Option<&[f64]>,
-    rng: &mut R,
+    rng: &mut dyn Rng,
 ) -> Option<Uuid> {
     if ids.is_empty() {
         return None;

@@ -13,12 +13,12 @@ fn beta_from_mean_kappa(mean: f64, kappa: f64) -> Beta<f64> {
 /// Resamples to ensure that the targe SOC is always greater than the
 /// starting SOC.
 ///
-pub fn sample_socs<R: Rng + ?Sized>(
+pub fn sample_socs(
     avg_start_soc: f64,
     avg_target_soc: f64,
     kappa_start: f64,
     kappa_target: f64,
-    rng: &mut R,
+    rng: &mut dyn Rng,
 ) -> (f64, f64) {
     let beta_start = beta_from_mean_kappa(avg_start_soc, kappa_start);
     let beta_end = beta_from_mean_kappa(avg_target_soc, kappa_target);

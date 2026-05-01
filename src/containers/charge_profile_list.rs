@@ -1,3 +1,4 @@
+use crate::errors::SimulationError;
 use crate::ev::ChargeProfile;
 use std::collections::HashMap;
 use uuid::Uuid;
@@ -31,20 +32,22 @@ impl ChargeProfileList {
     ///
     /// Fetch a charge profile from the list using its ID.
     ///
-    pub fn get_charge_profile(&self, id: &Uuid) -> Option<&ChargeProfile> {
+    pub fn get_charge_profile(&self, id: &Uuid) -> Result<&ChargeProfile, SimulationError> {
         self.charge_profile_map
             .get(id)
             .map(|&idx| &self.charge_profiles[idx])
+            .ok_or_else(|| SimulationError::InvalidChargeProfileId(id.to_string()))
     }
 
     ///
     /// Fetch a charge profile from the list using its name.
     ///
-    pub fn get_id_by_name(&self, name: &str) -> Option<Uuid> {
+    pub fn get_id_by_name(&self, name: &str) -> Result<Uuid, SimulationError> {
         self.charge_profiles
             .iter()
             .find(|c| c.name == name)
             .map(|c| c.id)
+            .ok_or_else(|| SimulationError::InvalidChargeProfileName(name.to_string()))
     }
 
     ///
