@@ -50,12 +50,12 @@ impl Simulation {
                 EventType::Arrival => {
                     info!("[t={}s] Vehicle {} arrives", event.time, event.vehicle_id);
 
-                    // Find an unoccupied charger otherwise add vehicle to the queue
+                    let vehicle = self.vehicle_list.get_vehicle(&event.vehicle_id)?;
+                    let charge_profile = self
+                        .charge_profile_list
+                        .get_charge_profile(&vehicle.charge_profile_id)?;
+
                     if let Some(charger) = self.site.get_unoccupied_charger_mut() {
-                        let vehicle = self.vehicle_list.get_vehicle(&event.vehicle_id)?;
-                        let charge_profile = self
-                            .charge_profile_list
-                            .get_charge_profile(&vehicle.charge_profile_id)?;
                         charger.start_charging(
                             event.time,
                             vehicle,
@@ -63,45 +63,20 @@ impl Simulation {
                             &mut self.event_queue,
                             &mut self.sessions,
                         )?;
+                    } else if self.waiting_queue.len() >= vehicle.max_queue_length {
+                        info!(
+                            "[t={}s] Vehicle {} baulks (queue length {})",
+                            event.time,
+                            event.vehicle_id,
+                            self.waiting_queue.len()
+                        );
+                        self.sessions.push(Session::balked(vehicle, charge_profile));
                     } else {
-                        let vehicle = self.vehicle_list.get_vehicle(&event.vehicle_id)?;
-                        if self.waiting_queue.len() >= vehicle.max_queue_length {
-                            let charge_profile = self
-                                .charge_profile_list
-                                .get_charge_profile(&vehicle.charge_profile_id)?;
-                            self.sessions.push(Session {
-                                vehicle: vehicle.name.to_owned(),
-                                vehicle_id: vehicle.id,
-                                charge_profile: charge_profile.name.to_owned(),
-                                charge_profile_id: vehicle.charge_profile_id,
-                                charger: None,
-                                charger_id: None,
-                                arrival_time: vehicle.arrival_time,
-                                plugin_time: None,
-                                unplug_time: None,
-                                wait_duration_s: 0,
-                                reneged: false,
-                                balked: true,
-                                charge_duration_s: None,
-                                idle_duration_s: None,
-                                peak_power_kw: None,
-                                energy_kwh: None,
-                                start_soc: vehicle.soc_start,
-                                end_soc: None,
-                            });
-                            info!(
-                                "[t={}s] Vehicle {} baulks (queue length {})",
-                                event.time,
-                                event.vehicle_id,
-                                self.waiting_queue.len()
-                            );
-                        } else {
-                            info!(
-                                "[t={}s] Vehicle {} added to queue",
-                                event.time, event.vehicle_id
-                            );
-                            self.waiting_queue.push_back(event.vehicle_id);
-                        }
+                        info!(
+                            "[t={}s] Vehicle {} added to queue",
+                            event.time, event.vehicle_id
+                        );
+                        self.waiting_queue.push_back(event.vehicle_id);
                     }
                 }
                 EventType::Unplug => {
@@ -137,26 +112,8 @@ impl Simulation {
                         let charge_profile = self
                             .charge_profile_list
                             .get_charge_profile(&vehicle.charge_profile_id)?;
-                        self.sessions.push(Session {
-                            vehicle: vehicle.name.to_owned(),
-                            vehicle_id: vehicle.id,
-                            charge_profile: charge_profile.name.to_owned(),
-                            charge_profile_id: vehicle.charge_profile_id,
-                            charger: None,
-                            charger_id: None,
-                            arrival_time: vehicle.arrival_time,
-                            plugin_time: None,
-                            unplug_time: None,
-                            wait_duration_s: event.time - vehicle.arrival_time,
-                            reneged: true,
-                            balked: false,
-                            charge_duration_s: None,
-                            idle_duration_s: None,
-                            peak_power_kw: None,
-                            energy_kwh: None,
-                            start_soc: vehicle.soc_start,
-                            end_soc: None,
-                        });
+                        self.sessions
+                            .push(Session::reneged(event.time, vehicle, charge_profile));
                         info!(
                             "[t={}s] Vehicle {} reneges queue",
                             event.time, event.vehicle_id

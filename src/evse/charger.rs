@@ -30,6 +30,8 @@ impl Charger {
 
     ///
     /// Start charging a vehicle.
+    /// Marks the charger busy, schedules the matching `Unplug` event and
+    /// records a charging `Session`.
     ///
     pub fn start_charging(
         &mut self,
@@ -39,7 +41,6 @@ impl Charger {
         event_queue: &mut BinaryHeap<Event>,
         sessions: &mut Vec<Session>,
     ) -> Result<(), SimulationError> {
-        let wait_duration_s = now - vehicle.arrival_time;
         let max_power_kw = (self.max_current_a * self.voltage / 1000.0).min(self.max_power_kw);
         let charge_outputs =
             charge_profile.calculate(vehicle.soc_start, vehicle.soc_target, max_power_kw)?;
@@ -55,26 +56,14 @@ impl Charger {
             now, vehicle.id, self.id, unplug_time
         );
 
-        sessions.push(Session {
-            vehicle: vehicle.name.to_owned(),
-            vehicle_id: vehicle.id,
-            charge_profile: charge_profile.name.to_owned(),
-            charge_profile_id: vehicle.charge_profile_id,
-            charger: Some(self.name.to_owned()),
-            charger_id: Some(self.id),
-            arrival_time: vehicle.arrival_time,
-            plugin_time: Some(now),
-            unplug_time: Some(unplug_time),
-            wait_duration_s,
-            reneged: false,
-            balked: false,
-            charge_duration_s: Some(charge_outputs.duration_s),
-            idle_duration_s: Some(vehicle.idle_duration_s),
-            peak_power_kw: Some(charge_outputs.peak_power_kw),
-            energy_kwh: Some(charge_outputs.energy_kwh),
-            start_soc: vehicle.soc_start,
-            end_soc: Some(vehicle.soc_target),
-        });
+        sessions.push(Session::charging(
+            now,
+            unplug_time,
+            vehicle,
+            self,
+            charge_profile,
+            &charge_outputs,
+        ));
 
         event_queue.push(Event {
             time: unplug_time,
