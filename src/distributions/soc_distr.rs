@@ -10,7 +10,7 @@ fn beta_from_mean_kappa(mean: f64, kappa: f64) -> Beta<f64> {
 
 ///
 /// Sample a random starting and target SOC from two beta distributions.
-/// Resamples to ensure that the targe SOC is always greater than the
+/// Resamples to ensure that the target SOC is always greater than the
 /// starting SOC.
 ///
 pub fn sample_socs(
