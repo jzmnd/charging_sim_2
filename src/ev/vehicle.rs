@@ -1,4 +1,4 @@
-use crate::distributions::{sample_charge_profile, sample_idle_time, sample_socs};
+use crate::distributions::{DurationSampler, ItemSampler, SocSampler};
 use crate::errors::BuilderError;
 use rand::Rng;
 use uuid::Uuid;
@@ -207,29 +207,42 @@ impl<'a> VehicleBuilder<'a> {
             }
         };
 
-        let (soc_start_sampled, soc_target_sampled) = sample_socs(
+        let soc_sampler = SocSampler::new(
             self.avg_start_soc.unwrap_or(DEFAULT_AVG_SOC_START),
             self.avg_target_soc.unwrap_or(DEFAULT_AVG_SOC_TARGET),
             self.soc_kappa_start.unwrap_or(DEFAULT_SOC_KAPPA_START),
             self.soc_kappa_target.unwrap_or(DEFAULT_SOC_KAPPA_TARGET),
-            rng,
-        );
-        let idle_duration_s = self.idle_duration_s.unwrap_or_else(|| {
-            sample_idle_time(
-                self.avg_idle_duration_s
-                    .unwrap_or(DEFAULT_AVG_IDLE_DURATION_S),
-                self.idle_duration_shape
-                    .unwrap_or(DEFAULT_IDLE_DURATION_SHAPE),
-                rng,
-            )
-        });
-        let charge_profile_id = self
-            .charge_profile_id
-            .or_else(|| {
-                let ids = self.charge_profile_ids.as_ref()?;
-                sample_charge_profile(ids, self.charge_profile_weights.as_deref(), rng)
-            })
-            .ok_or(BuilderError::MissingChargerProfileId)?;
+        )?;
+        let (soc_start_sampled, soc_target_sampled) = soc_sampler.sample(rng);
+
+        let idle_duration_s = match self.idle_duration_s {
+            Some(duration) => duration,
+            None => {
+                let idle_dur_sampler = DurationSampler::new(
+                    self.avg_idle_duration_s
+                        .unwrap_or(DEFAULT_AVG_IDLE_DURATION_S),
+                    self.idle_duration_shape
+                        .unwrap_or(DEFAULT_IDLE_DURATION_SHAPE),
+                )?;
+                idle_dur_sampler.sample(rng)
+            }
+        };
+        let charge_profile_id = match self.charge_profile_id {
+            Some(id) => id,
+            None => {
+                let mut id_sampler = ItemSampler::new(
+                    self.charge_profile_ids
+                        .as_deref()
+                        .ok_or(BuilderError::MissingChargerProfileId)?,
+                );
+                if let Some(weights) = self.charge_profile_weights.as_deref() {
+                    id_sampler.set_weights(weights);
+                }
+                id_sampler
+                    .sample(rng)
+                    .ok_or(BuilderError::MissingChargerProfileId)?
+            }
+        };
 
         Ok(Vehicle {
             id: Uuid::new_v4(),

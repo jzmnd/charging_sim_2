@@ -26,4 +26,15 @@ pub enum SimulationError {
 pub enum BuilderError {
     #[error("Missing charge profile ID")]
     MissingChargerProfileId,
+    #[error(transparent)]
+    SamplerError(#[from] SamplerError),
+}
+
+///
+/// Sampler errors.
+///
+#[derive(Error, Debug)]
+pub enum SamplerError {
+    #[error("Invalid sampler parameter: {0}")]
+    InvalidParameter(String),
 }

@@ -21,8 +21,8 @@ fn main() {
     ];
     let dow_distr = [0.95, 0.8, 0.8, 0.75, 0.8, 0.85, 1.0];
     let avg_sessions_per_day = 23.4;
-    let arrival_sampler = ArrivalSampler::new(tod_distr, dow_distr, avg_sessions_per_day);
-    let arrivals = arrival_sampler.sample_arrivals(365, &mut rng);
+    let arrival_sampler = ArrivalSampler::new(tod_distr, dow_distr, avg_sessions_per_day).unwrap();
+    let arrivals = arrival_sampler.sample(365, &mut rng);
 
     let mut vehicle_builder = Vehicle::builder();
     vehicle_builder
