@@ -33,6 +33,27 @@ impl ChargeProfile {
                 .partial_cmp(&b.soc)
                 .expect("SOC values should never contain NaN")
         });
+        // extrapolate to SOC = 0 if not present in the data
+        if let Some(first) = data.first()
+            && first.soc > 0.0
+        {
+            data.insert(
+                0,
+                ChargeProfileRecord {
+                    soc: 0.0,
+                    power: first.power,
+                },
+            );
+        }
+        // extrapolate to SOC = 1 if not present in the data
+        if let Some(last) = data.last()
+            && last.soc < 1.0
+        {
+            data.push(ChargeProfileRecord {
+                soc: 1.0,
+                power: last.power,
+            });
+        }
         Self {
             id: Uuid::new_v4(),
             name: name.to_owned(),
@@ -165,6 +186,15 @@ mod tests {
         let output = charge_profile.calculate(0.2, 0.6, 150.0).unwrap();
         assert_approx_eq!(output.duration_s, 732.4643232975575);
         assert_approx_eq!(output.energy_kwh, 24.0);
+        assert_approx_eq!(output.peak_power_kw, 150.0);
+    }
+
+    #[test]
+    fn test_calculate_full_charge() {
+        let charge_profile =
+            ChargeProfile::from_file("cp1", "data/example_charge_profile_1.csv", 60.0).unwrap();
+        let output = charge_profile.calculate(0.0, 1.0, 150.0).unwrap();
+        assert_approx_eq!(output.energy_kwh, 60.0);
         assert_approx_eq!(output.peak_power_kw, 150.0);
     }
 }
