@@ -7,6 +7,7 @@ use std::process;
 fn main() {
     env_logger::init();
 
+    // Set up all the vehicle charge profiles required in the simulation
     let charge_profile_list = ChargeProfileList::new(vec![
         ChargeProfile::from_file("cp1", "data/example_charge_profile_1.csv", 60.0).unwrap(),
         ChargeProfile::from_file("cp2", "data/example_charge_profile_2.csv", 75.0).unwrap(),
@@ -15,7 +16,8 @@ fn main() {
     let cp2_id = charge_profile_list.get_id_by_name("cp2").unwrap();
     let all_ids = charge_profile_list.all_ids();
 
-    let vehicles: Vec<Vehicle> = vec![
+    // Build a vehicle list with 6 arrivals
+    let vehicle_list: VehicleList = vec![
         Vehicle::builder()
             .soc_start(0.2)
             .soc_target(0.8)
@@ -61,9 +63,11 @@ fn main() {
             .idle_duration_s(2.0 * 60.0)
             .build("v6")
             .unwrap(),
-    ];
-    let vehicle_list = VehicleList::new(vehicles);
+    ]
+    .into_iter()
+    .collect();
 
+    // Build the EV chargers and site
     let chargers: Vec<Charger> = vec![
         Charger::builder()
             .max_power_kw(180.0)
@@ -76,6 +80,7 @@ fn main() {
     ];
     let site = Site::new("s1", chargers);
 
+    // Run the simulation and save outputs
     let mut simulation = Simulation::new(site, vehicle_list, charge_profile_list);
     if let Err(e) = simulation.run() {
         eprintln!("Simulation error: {}", e);
