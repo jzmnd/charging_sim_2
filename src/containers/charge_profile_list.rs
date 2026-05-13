@@ -1,6 +1,6 @@
 use crate::errors::SimulationError;
 use crate::ev::ChargeProfile;
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 use uuid::Uuid;
 
 ///
@@ -9,7 +9,7 @@ use uuid::Uuid;
 #[derive(Debug, Default)]
 pub struct ChargeProfileList {
     charge_profiles: Vec<ChargeProfile>,
-    charge_profile_map: HashMap<Uuid, usize>,
+    charge_profile_map: FxHashMap<Uuid, usize>,
 }
 
 impl ChargeProfileList {

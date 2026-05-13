@@ -3,6 +3,9 @@ use rand::{Rng, RngExt};
 use rand_distr::weighted::WeightedIndex;
 use rand_distr::{Distribution, Poisson};
 
+///
+/// Sampler for vehicle arrival times.
+///
 #[derive(Debug)]
 pub struct ArrivalSampler {
     hour_dist: WeightedIndex<f64>,

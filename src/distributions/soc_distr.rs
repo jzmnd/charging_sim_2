@@ -2,6 +2,9 @@ use crate::errors::SamplerError;
 use rand::Rng;
 use rand_distr::{Beta, Distribution};
 
+///
+/// Sampler for vehicle start and target SOCs.
+///
 #[derive(Debug)]
 pub struct SocSampler {
     beta_start: Beta<f64>,

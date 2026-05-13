@@ -2,7 +2,7 @@ use charging_sim_2::containers::{ChargeProfileList, VehicleList};
 use charging_sim_2::distributions::ArrivalSampler;
 use charging_sim_2::ev::{ChargeProfile, Vehicle};
 use charging_sim_2::evse::{Charger, Site};
-use charging_sim_2::simulation::DiscreteEventSimulation;
+use charging_sim_2::simulation::TimeStepSimulation;
 use std::process;
 
 fn main() {
@@ -56,13 +56,13 @@ fn main() {
     let site = Site::new("s1", chargers);
 
     // Run the simulation and save outputs
-    let mut simulation = DiscreteEventSimulation::new(site, vehicle_list, charge_profile_list);
+    let mut simulation = TimeStepSimulation::new(site, vehicle_list, charge_profile_list);
     if let Err(e) = simulation.run() {
         eprintln!("Simulation error: {}", e);
         process::exit(1);
     };
 
     simulation
-        .save_sessions_csv("outputs/example_simulation_long_output.csv")
+        .save_sessions_csv("outputs/example_ts_simulation_long_output.csv")
         .unwrap();
 }

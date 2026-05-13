@@ -1,3 +1,4 @@
+use crate::errors::SimulationError;
 use crate::ev::{ChargeProfile, ChargingOutput, Vehicle};
 use crate::evse::Charger;
 use serde::Serialize;
@@ -35,7 +36,38 @@ impl Session {
     ///
     /// Build a session for a vehicle that successfully started charging.
     ///
-    pub fn charging(
+    pub fn started(
+        now: u64,
+        vehicle: &Vehicle,
+        charger: &Charger,
+        charge_profile: &ChargeProfile,
+    ) -> Self {
+        Self {
+            vehicle: vehicle.name.to_owned(),
+            vehicle_id: vehicle.id,
+            charge_profile: charge_profile.name.to_owned(),
+            charge_profile_id: vehicle.charge_profile_id,
+            charger: Some(charger.name.to_owned()),
+            charger_id: Some(charger.id),
+            arrival_time: vehicle.arrival_time,
+            plugin_time: Some(now),
+            unplug_time: None,
+            wait_duration_s: now - vehicle.arrival_time,
+            reneged: false,
+            balked: false,
+            charge_duration_s: None,
+            idle_duration_s: Some(vehicle.idle_duration_s),
+            peak_power_kw: None,
+            energy_kwh: None,
+            start_soc: vehicle.soc_start,
+            end_soc: Some(vehicle.soc_target),
+        }
+    }
+
+    ///
+    /// Build a session for a vehicle that successfully charged.
+    ///
+    pub fn charged(
         now: u64,
         unplug_time: u64,
         vehicle: &Vehicle,
@@ -116,5 +148,26 @@ impl Session {
             start_soc: vehicle.soc_start,
             end_soc: None,
         }
+    }
+
+    ///
+    /// Add final charging data to the session once charging is complete and the vehicle unplugs.
+    ///
+    pub fn finalize(
+        &mut self,
+        now: u64,
+        peak_power_kw: f64,
+        energy_kwh: f64,
+    ) -> Result<(), SimulationError> {
+        let plugin_time = self
+            .plugin_time
+            .ok_or(SimulationError::MissingSessionPluginTime)?;
+
+        self.unplug_time = Some(now);
+        self.charge_duration_s =
+            Some((now - plugin_time) as f64 - self.idle_duration_s.unwrap_or(0.0));
+        self.peak_power_kw = Some(peak_power_kw);
+        self.energy_kwh = Some(energy_kwh);
+        Ok(())
     }
 }

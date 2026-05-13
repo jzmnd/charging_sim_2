@@ -1,6 +1,11 @@
 # EV Charging Simulator
 
-An event-driven simulation of electric vehicle (EV) charging.
+A simulation of electric vehicle (EV) charging.
+
+Two simulation approaches are implemented:
+
+- A discrete event-driven simulation that is fast but cannot account for charger power sharing or site wide power limits
+- A full time-step simulation that is slower but allows for power sharing algorithms to be implemented
 
 ## Features
 
