@@ -7,6 +7,31 @@ use std::collections::BinaryHeap;
 use uuid::Uuid;
 
 ///
+/// The status of an EV charger when a vehicle is connected.
+///
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ChargerStatus {
+    Charging,
+    Idle,
+}
+
+///
+/// Object that represents the state of an EV charger when a vehicle is connected.
+///
+#[derive(Debug)]
+pub struct ChargerState {
+    pub charge_profile_id: Uuid,
+    pub current_soc: f64,
+    pub current_max_power_kw: f64,
+    pub target_soc: f64,
+    pub idle_remaining_s: f64,
+    pub status: ChargerStatus,
+    pub energy_kwh: f64,
+    pub peak_power_kw: f64,
+    pub session_idx: usize,
+}
+
+///
 /// Object that represents an EV charger.
 ///
 #[derive(Debug)]
@@ -16,7 +41,6 @@ pub struct Charger {
     pub max_power_kw: f64,
     pub max_current_a: f64,
     pub voltage: f64,
-    pub occupied_until: u64,
     pub is_busy: bool,
 }
 
@@ -33,7 +57,7 @@ impl Charger {
     /// Marks the charger busy, schedules the matching `Unplug` event and
     /// records a charging `Session`.
     ///
-    pub fn start_charging(
+    pub fn start_charging_discrete(
         &mut self,
         now: u64,
         vehicle: &Vehicle,
@@ -43,20 +67,17 @@ impl Charger {
     ) -> Result<(), SimulationError> {
         let max_power_kw = (self.max_current_a * self.voltage / 1000.0).min(self.max_power_kw);
         let charge_outputs =
-            charge_profile.calculate(vehicle.soc_start, vehicle.soc_target, max_power_kw)?;
-
+            charge_profile.integrate_over(vehicle.soc_start, vehicle.soc_target, max_power_kw)?;
         let unplug_time =
             now + charge_outputs.duration_s.ceil() as u64 + vehicle.idle_duration_s.ceil() as u64;
 
         self.is_busy = true;
-        self.occupied_until = unplug_time;
-
         debug!(
             "[t={}s] Vehicle {} starts charging on Charger {} until t={}s",
             now, vehicle.id, self.id, unplug_time
         );
 
-        sessions.push(Session::charging(
+        sessions.push(Session::charged(
             now,
             unplug_time,
             vehicle,
@@ -76,11 +97,45 @@ impl Charger {
     }
 
     ///
+    /// Start charging a vehicle.
+    /// Marks the charger busy, starts a charging `Session`, and returns
+    /// the charger state.
+    ///
+    pub fn start_charging_timestep(
+        &mut self,
+        now: u64,
+        vehicle: &Vehicle,
+        charge_profile: &ChargeProfile,
+        sessions: &mut Vec<Session>,
+    ) -> ChargerState {
+        self.is_busy = true;
+        debug!(
+            "[t={}s] Vehicle {} starts charging on Charger {}",
+            now, vehicle.id, self.id
+        );
+
+        sessions.push(Session::started(now, vehicle, self, charge_profile));
+        let session_idx = sessions.len() - 1;
+
+        ChargerState {
+            charge_profile_id: charge_profile.id,
+            current_soc: vehicle.soc_start,
+            current_max_power_kw: self.max_power_kw,
+            target_soc: vehicle.soc_target,
+            idle_remaining_s: vehicle.idle_duration_s,
+            status: ChargerStatus::Charging,
+            energy_kwh: 0.0,
+            peak_power_kw: 0.0,
+            session_idx,
+        }
+    }
+
+    ///
     /// Stop charging a vehicle.
+    /// Marks the charger free to use.
     ///
     pub fn end_charging(&mut self, now: u64) {
         self.is_busy = false;
-
         debug!("[t={}s] Charging complete on Charger {}", now, self.id);
     }
 }
@@ -89,6 +144,9 @@ const DEFAULT_MAX_POWER_KW: f64 = 480.0;
 const DEFAULT_MAX_CURRENT_A: f64 = 1200.0;
 const DEFAULT_VOLTAGE: f64 = 400.0;
 
+///
+/// Builder used to create `Charger` objects.
+///
 #[derive(Debug, Default)]
 pub struct ChargerBuilder {
     max_power_kw: Option<f64>,
@@ -131,7 +189,6 @@ impl ChargerBuilder {
             max_power_kw: self.max_power_kw.unwrap_or(DEFAULT_MAX_POWER_KW),
             max_current_a: self.max_current_a.unwrap_or(DEFAULT_MAX_CURRENT_A),
             voltage: self.voltage.unwrap_or(DEFAULT_VOLTAGE),
-            occupied_until: 0,
             is_busy: false,
         }
     }

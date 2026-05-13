@@ -4,6 +4,9 @@ use rand::prelude::IndexedRandom;
 use rand_distr::Distribution;
 use rand_distr::weighted::WeightedIndex;
 
+///
+/// Discrete item sampler.
+///
 #[derive(Debug)]
 pub struct ItemSampler<T> {
     items: Vec<T>,

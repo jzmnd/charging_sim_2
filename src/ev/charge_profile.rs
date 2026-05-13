@@ -2,12 +2,18 @@ use crate::errors::SimulationError;
 use serde::Deserialize;
 use uuid::Uuid;
 
+///
+/// Single charge profile (SOC, power) datum.
+///
 #[derive(Debug, Deserialize, PartialEq, PartialOrd)]
 pub struct ChargeProfileRecord {
     pub soc: f64,
     pub power: f64,
 }
 
+///
+/// Output of the integration over a charger profile.
+///
 #[derive(Debug, Default)]
 pub struct ChargingOutput {
     pub duration_s: f64,
@@ -15,12 +21,16 @@ pub struct ChargingOutput {
     pub peak_power_kw: f64,
 }
 
+///
+/// Object that represents a vehicle's charge profile
+/// i.e. power as a function of battery SOC.
+///
 #[derive(Debug)]
 pub struct ChargeProfile {
     pub id: Uuid,
     pub name: String,
     data: Vec<ChargeProfileRecord>,
-    battery_capacity_kwh: f64,
+    pub battery_capacity_kwh: f64,
 }
 
 impl ChargeProfile {
@@ -117,10 +127,11 @@ impl ChargeProfile {
     }
 
     ///
-    /// Calculate the properties of a charging event by integrating over
+    /// Calculate the properties of a full charging session by integrating over
     /// the charge profile from a starting to target SOC.
+    /// Assumes `max_power_kw` is fixed over the whole session.
     ///
-    pub fn calculate(
+    pub fn integrate_over(
         &self,
         soc_start: f64,
         soc_target: f64,
@@ -180,20 +191,20 @@ mod tests {
     }
 
     #[test]
-    fn test_calculate() {
+    fn test_integrate_over() {
         let charge_profile =
             ChargeProfile::from_file("cp1", "data/example_charge_profile_1.csv", 60.0).unwrap();
-        let output = charge_profile.calculate(0.2, 0.6, 150.0).unwrap();
+        let output = charge_profile.integrate_over(0.2, 0.6, 150.0).unwrap();
         assert_approx_eq!(output.duration_s, 732.4643232975575);
         assert_approx_eq!(output.energy_kwh, 24.0);
         assert_approx_eq!(output.peak_power_kw, 150.0);
     }
 
     #[test]
-    fn test_calculate_full_charge() {
+    fn test_integrate_over_full_charge() {
         let charge_profile =
             ChargeProfile::from_file("cp1", "data/example_charge_profile_1.csv", 60.0).unwrap();
-        let output = charge_profile.calculate(0.0, 1.0, 150.0).unwrap();
+        let output = charge_profile.integrate_over(0.0, 1.0, 150.0).unwrap();
         assert_approx_eq!(output.energy_kwh, 60.0);
         assert_approx_eq!(output.peak_power_kw, 150.0);
     }

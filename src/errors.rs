@@ -17,6 +17,8 @@ pub enum SimulationError {
     MissingChargerId,
     #[error("Charge profile should not be empty")]
     EmptyChargeProfile,
+    #[error("Plugin time is missing from the session data")]
+    MissingSessionPluginTime,
 }
 
 ///

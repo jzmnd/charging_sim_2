@@ -1,6 +1,6 @@
 use crate::errors::SimulationError;
-use crate::evse::Charger;
-use std::collections::HashMap;
+use crate::evse::{Charger, ChargerState};
+use rustc_hash::FxHashMap;
 use uuid::Uuid;
 
 ///
@@ -11,7 +11,7 @@ pub struct Site {
     pub id: Uuid,
     pub name: String,
     pub chargers: Vec<Charger>,
-    charger_map: HashMap<Uuid, usize>,
+    charger_map: FxHashMap<Uuid, usize>,
 }
 
 impl Site {
@@ -88,5 +88,22 @@ impl Site {
             .get(id)
             .map(|&idx| &mut self.chargers[idx])
             .ok_or_else(|| SimulationError::InvalidChargerId(id.to_string()))
+    }
+
+    ///
+    /// Allocate the maximum power each currently active charger can deliver.
+    /// Default implementation: each active charger gets its own
+    /// physical cap independent of how many other chargers are active.
+    ///
+    pub fn allocate_power(
+        &self,
+        active_charger_states: &mut FxHashMap<Uuid, ChargerState>,
+    ) -> Result<(), SimulationError> {
+        for (charger_id, charger_state) in active_charger_states.iter_mut() {
+            let charger = self.get_charger(charger_id)?;
+            charger_state.current_max_power_kw =
+                (charger.max_current_a * charger.voltage / 1000.0).min(charger.max_power_kw);
+        }
+        Ok(())
     }
 }

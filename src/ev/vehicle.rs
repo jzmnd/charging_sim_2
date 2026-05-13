@@ -3,6 +3,9 @@ use crate::errors::BuilderError;
 use rand::Rng;
 use uuid::Uuid;
 
+///
+/// Object that represents an EV.
+///
 #[derive(Debug)]
 pub struct Vehicle {
     pub id: Uuid,
@@ -36,6 +39,9 @@ const DEFAULT_IDLE_DURATION_SHAPE: f64 = 3.0;
 const DEFAULT_MAX_WAIT_S: u64 = 1800;
 const DEFAULT_MAX_QUEUE_LENGTH: usize = 10;
 
+///
+/// Builder used to create `Vehicle` objects.
+///
 #[derive(Default)]
 pub struct VehicleBuilder<'a> {
     soc_start: Option<f64>,

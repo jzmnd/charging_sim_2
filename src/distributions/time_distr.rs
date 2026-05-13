@@ -2,6 +2,9 @@ use crate::errors::SamplerError;
 use rand::Rng;
 use rand_distr::{Distribution, Gamma};
 
+///
+/// Duration time sampler based on a gamma distribution.
+///
 #[derive(Debug)]
 pub struct DurationSampler {
     gamma: Gamma<f64>,

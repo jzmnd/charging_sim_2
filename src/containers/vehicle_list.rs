@@ -1,8 +1,8 @@
 use crate::errors::SimulationError;
 use crate::ev::Vehicle;
 use crate::events::{Event, EventType};
+use rustc_hash::FxHashMap;
 use std::collections::BinaryHeap;
-use std::collections::HashMap;
 use uuid::Uuid;
 
 ///
@@ -11,7 +11,7 @@ use uuid::Uuid;
 #[derive(Debug, Default)]
 pub struct VehicleList {
     vehicles: Vec<Vehicle>,
-    vehicle_map: HashMap<Uuid, usize>,
+    vehicle_map: FxHashMap<Uuid, usize>,
 }
 
 impl VehicleList {
@@ -59,7 +59,7 @@ impl VehicleList {
     }
 
     ///
-    /// Generate a list of arival events from the vehicle list.
+    /// Generate a list of arrival events from the vehicle list.
     ///
     pub fn generate_arrival_events(&self) -> BinaryHeap<Event> {
         let mut events = BinaryHeap::new();
