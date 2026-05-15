@@ -129,24 +129,22 @@ impl TimeStepSimulation {
             }
 
             // Compute the per-charger power cap and increment charging at each active charger
-            self.site.allocate_power(&mut self.active_charger_states)?;
+            self.site
+                .allocate_power(&mut self.active_charger_states, &self.charge_profile_list)?;
 
             for (charger_id, charger_state) in self.active_charger_states.iter_mut() {
                 match charger_state.status {
                     ChargerStatus::Charging => {
-                        let charge_profile = self
-                            .charge_profile_list
-                            .get_charge_profile(&charger_state.charge_profile_id)?;
-                        let requested_power = charge_profile.power_at(charger_state.current_soc)?;
-                        let delivered_power =
-                            requested_power.min(charger_state.current_max_power_kw);
+                        let delivered_power = charger_state
+                            .requested_power_kw
+                            .min(charger_state.max_power_kw);
                         let delta_energy = delivered_power * TIMESTEP_HRS_F;
 
                         charger_state.energy_kwh += delta_energy;
                         charger_state.peak_power_kw =
                             charger_state.peak_power_kw.max(delivered_power);
                         charger_state.current_soc +=
-                            delta_energy / charge_profile.battery_capacity_kwh;
+                            delta_energy / charger_state.battery_capacity_kwh;
 
                         if charger_state.current_soc >= charger_state.target_soc {
                             charger_state.status = ChargerStatus::Idle;

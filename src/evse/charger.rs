@@ -20,12 +20,19 @@ pub enum ChargerStatus {
 ///
 #[derive(Debug)]
 pub struct ChargerState {
+    // Vehicle charge profile information
     pub charge_profile_id: Uuid,
+    pub battery_capacity_kwh: f64,
+    // Instantaneous SOC, requested power and power limits
     pub current_soc: f64,
-    pub current_max_power_kw: f64,
+    pub requested_power_kw: f64,
+    pub charger_max_power_kw: f64,
+    pub max_power_kw: f64,
+    // Status tracking
     pub target_soc: f64,
     pub idle_remaining_s: f64,
     pub status: ChargerStatus,
+    // Session accumulators and tracking
     pub energy_kwh: f64,
     pub peak_power_kw: f64,
     pub session_idx: usize,
@@ -65,7 +72,7 @@ impl Charger {
         event_queue: &mut BinaryHeap<Event>,
         sessions: &mut Vec<Session>,
     ) -> Result<(), SimulationError> {
-        let max_power_kw = (self.max_current_a * self.voltage / 1000.0).min(self.max_power_kw);
+        let max_power_kw = self.actual_max_power_kw();
         let charge_outputs =
             charge_profile.integrate_over(vehicle.soc_start, vehicle.soc_target, max_power_kw)?;
         let unplug_time =
@@ -119,8 +126,11 @@ impl Charger {
 
         ChargerState {
             charge_profile_id: charge_profile.id,
+            battery_capacity_kwh: charge_profile.battery_capacity_kwh,
             current_soc: vehicle.soc_start,
-            current_max_power_kw: self.max_power_kw,
+            requested_power_kw: 0.0,
+            charger_max_power_kw: self.max_power_kw,
+            max_power_kw: self.max_power_kw,
             target_soc: vehicle.soc_target,
             idle_remaining_s: vehicle.idle_duration_s,
             status: ChargerStatus::Charging,
@@ -137,6 +147,14 @@ impl Charger {
     pub fn end_charging(&mut self, now: u64) {
         self.is_busy = false;
         debug!("[t={}s] Charging complete on Charger {}", now, self.id);
+    }
+
+    ///
+    /// Actual maximum power deliverable by the EV charger.
+    /// The smaller of either the power rating or the (current * voltage) rating.
+    ///
+    pub fn actual_max_power_kw(&self) -> f64 {
+        (self.max_current_a * self.voltage / 1000.0).min(self.max_power_kw)
     }
 }
 
