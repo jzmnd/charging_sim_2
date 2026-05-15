@@ -3,7 +3,7 @@ use crate::errors::SimulationError;
 use crate::events::{Event, EventType};
 use crate::evse::Site;
 use crate::session::Session;
-use log::info;
+use log::{info, warn};
 use std::collections::{BinaryHeap, VecDeque};
 use std::path::Path;
 use uuid::Uuid;
@@ -45,6 +45,9 @@ impl DiscreteEventSimulation {
     /// Run the simulation given a site, list of vehicles and list of charge profiles.
     ///
     pub fn run(&mut self) -> Result<(), SimulationError> {
+        if self.site.site_max_power_kw.is_some() {
+            warn!("site_max_power_kw is set but DiscreteEventSimulation does not enforce this");
+        }
         while let Some(event) = self.event_queue.pop() {
             match event.event_type {
                 EventType::Arrival => {
