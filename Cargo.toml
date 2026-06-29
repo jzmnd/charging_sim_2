@@ -1,7 +1,7 @@
 [package]
 name = "charging_sim_2"
 version = "0.1.0"
-description = "An event-driven simulation of electric vehicle (EV) charging."
+description = "An event-driven and time step simulation of electric vehicle (EV) charging."
 authors = ["Jez Smith <j.smith.03@cantab.net>"]
 readme = "README.md"
 license-file = "LICENSE.md"
