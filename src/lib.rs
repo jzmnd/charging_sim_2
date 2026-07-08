@@ -4,5 +4,6 @@ pub mod errors;
 pub mod ev;
 pub mod events;
 pub mod evse;
+pub mod geo;
 pub mod session;
 pub mod simulation;

@@ -13,6 +13,10 @@ pub enum SimulationError {
     InvalidChargeProfileName(String),
     #[error("Invalid charger ID `{0}`")]
     InvalidChargerId(String),
+    #[error("Invalid site ID `{0}`")]
+    InvalidSiteId(String),
+    #[error("Invalid location ID `{0}`")]
+    InvalidLocationId(String),
     #[error("Missing charger ID from Event")]
     MissingChargerId,
     #[error("Charge profile should not be empty")]
@@ -39,4 +43,13 @@ pub enum BuilderError {
 pub enum SamplerError {
     #[error("Invalid sampler parameter: {0}")]
     InvalidParameter(String),
+}
+
+///
+/// Geolocation errors.
+///
+#[derive(Error, Debug)]
+pub enum GeoError {
+    #[error("Invalid coordinates")]
+    InvalidCoordinates,
 }
