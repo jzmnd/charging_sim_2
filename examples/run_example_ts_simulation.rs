@@ -1,6 +1,7 @@
 use charging_sim_2::containers::{ChargeProfileList, VehicleList};
 use charging_sim_2::ev::{ChargeProfile, Vehicle};
 use charging_sim_2::evse::{Charger, Site};
+use charging_sim_2::geo::Coords;
 use charging_sim_2::simulation::TimeStepSimulation;
 use std::process;
 
@@ -78,7 +79,7 @@ fn main() {
             .max_current_a(500.0)
             .build("c2"),
     ];
-    let site = Site::new("s1", chargers);
+    let site = Site::new("s1", chargers, Coords::try_new(37.7893, -122.4014).unwrap());
 
     // Run the simulation and save outputs
     let mut simulation = TimeStepSimulation::new(site, vehicle_list, charge_profile_list);

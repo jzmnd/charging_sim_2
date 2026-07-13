@@ -2,6 +2,7 @@ use charging_sim_2::containers::{ChargeProfileList, VehicleList};
 use charging_sim_2::distributions::ArrivalSampler;
 use charging_sim_2::ev::{ChargeProfile, Vehicle};
 use charging_sim_2::evse::{Charger, Site};
+use charging_sim_2::geo::Coords;
 use charging_sim_2::simulation::TimeStepSimulation;
 use std::process;
 
@@ -53,7 +54,7 @@ fn main() {
     let chargers: Vec<Charger> = (1..3)
         .map(|i| charger_builder.build(&format!("c{}", i)))
         .collect();
-    let site = Site::new("s1", chargers);
+    let site = Site::new("s1", chargers, Coords::try_new(37.7893, -122.4014).unwrap());
 
     // Run the simulation and save outputs
     let mut simulation = TimeStepSimulation::new(site, vehicle_list, charge_profile_list);

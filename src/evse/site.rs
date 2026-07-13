@@ -1,6 +1,8 @@
 use crate::containers::ChargeProfileList;
 use crate::errors::SimulationError;
 use crate::evse::{Charger, ChargerState};
+use crate::geo::Coords;
+use crate::geo::Located;
 use rustc_hash::FxHashMap;
 use uuid::Uuid;
 
@@ -11,6 +13,7 @@ use uuid::Uuid;
 pub struct Site {
     pub id: Uuid,
     pub name: String,
+    coordinates: Coords,
     pub chargers: Vec<Charger>,
     pub site_max_power_kw: Option<f64>,
     charger_map: FxHashMap<Uuid, usize>,
@@ -20,7 +23,7 @@ impl Site {
     ///
     /// Create a new EV charging site from a list of chargers.
     ///
-    pub fn new(name: &str, chargers: Vec<Charger>) -> Self {
+    pub fn new(name: &str, chargers: Vec<Charger>, coordinates: Coords) -> Self {
         let charger_map = chargers
             .iter()
             .enumerate()
@@ -30,6 +33,7 @@ impl Site {
         Self {
             id: Uuid::new_v4(),
             name: name.to_owned(),
+            coordinates,
             chargers,
             site_max_power_kw: None,
             charger_map,
@@ -146,5 +150,11 @@ impl Site {
             };
         }
         Ok(())
+    }
+}
+
+impl Located for Site {
+    fn coordinates(&self) -> &Coords {
+        &self.coordinates
     }
 }
