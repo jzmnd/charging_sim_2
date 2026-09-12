@@ -158,6 +158,19 @@ impl Charger {
     pub fn actual_max_power_kw(&self) -> f64 {
         (self.max_current_a * self.voltage / 1000.0).min(self.max_power_kw)
     }
+
+    ///
+    /// Resolve which connector to use between this charger and a vehicle's
+    /// list of connectors. Chosen in the vehicle's preference order: the
+    /// first connector in `vehicle_connectors` that this charger also
+    /// supports. Returns `None` if they share no connector.
+    ///
+    pub fn resolve_connector(&self, vehicle_connectors: &[ConnectorType]) -> Option<ConnectorType> {
+        vehicle_connectors
+            .iter()
+            .copied()
+            .find(|c| self.connectors.contains(c))
+    }
 }
 
 const DEFAULT_MAX_POWER_KW: f64 = 480.0;

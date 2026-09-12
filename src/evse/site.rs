@@ -94,7 +94,7 @@ impl Site {
     pub fn get_unoccupied_charger_of_type(&self, conns: &[ConnectorType]) -> Option<&Charger> {
         self.chargers
             .iter()
-            .find(|c| !c.is_busy && c.connectors.iter().any(|cn| conns.contains(cn)))
+            .find(|c| !c.is_busy && c.resolve_connector(conns).is_some())
     }
 
     ///
@@ -107,7 +107,7 @@ impl Site {
     ) -> Option<&mut Charger> {
         self.chargers
             .iter_mut()
-            .find(|c| !c.is_busy && c.connectors.iter().any(|cn| conns.contains(cn)))
+            .find(|c| !c.is_busy && c.resolve_connector(conns).is_some())
     }
 
     ///

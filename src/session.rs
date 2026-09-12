@@ -1,6 +1,6 @@
 use crate::errors::SimulationError;
 use crate::ev::{ChargeProfile, ChargingOutput, Vehicle};
-use crate::evse::Charger;
+use crate::evse::{Charger, ConnectorType};
 use serde::Serialize;
 use uuid::Uuid;
 
@@ -18,6 +18,7 @@ pub struct Session {
     pub charge_profile_id: Uuid,
     pub charger: Option<String>,
     pub charger_id: Option<Uuid>,
+    pub connector: Option<ConnectorType>,
     pub arrival_time: u64,
     pub plugin_time: Option<u64>,
     pub unplug_time: Option<u64>,
@@ -49,6 +50,7 @@ impl Session {
             charge_profile_id: vehicle.charge_profile_id,
             charger: Some(charger.name.to_owned()),
             charger_id: Some(charger.id),
+            connector: charger.resolve_connector(&vehicle.connectors),
             arrival_time: vehicle.arrival_time,
             plugin_time: Some(now),
             unplug_time: None,
@@ -82,6 +84,7 @@ impl Session {
             charge_profile_id: vehicle.charge_profile_id,
             charger: Some(charger.name.to_owned()),
             charger_id: Some(charger.id),
+            connector: charger.resolve_connector(&vehicle.connectors),
             arrival_time: vehicle.arrival_time,
             plugin_time: Some(now),
             unplug_time: Some(unplug_time),
@@ -108,6 +111,7 @@ impl Session {
             charge_profile_id: vehicle.charge_profile_id,
             charger: None,
             charger_id: None,
+            connector: None,
             arrival_time: vehicle.arrival_time,
             plugin_time: None,
             unplug_time: None,
@@ -135,6 +139,7 @@ impl Session {
             charge_profile_id: vehicle.charge_profile_id,
             charger: None,
             charger_id: None,
+            connector: None,
             arrival_time: vehicle.arrival_time,
             plugin_time: None,
             unplug_time: None,

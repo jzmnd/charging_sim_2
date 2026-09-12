@@ -58,7 +58,10 @@ impl DiscreteEventSimulation {
                         .charge_profile_list
                         .get_charge_profile(&vehicle.charge_profile_id)?;
 
-                    if let Some(charger) = self.site.get_unoccupied_charger_mut() {
+                    if let Some(charger) = self
+                        .site
+                        .get_unoccupied_charger_of_type_mut(&vehicle.connectors)
+                    {
                         charger.start_charging_discrete(
                             event.time,
                             vehicle,
@@ -89,8 +92,18 @@ impl DiscreteEventSimulation {
                     let charger = self.site.get_charger_mut(&charger_id)?;
                     charger.end_charging(event.time);
 
-                    // Start charging the next vehicle in the queue
-                    if let Some(next_vehicle_id) = self.waiting_queue.pop_front() {
+                    // Start charging the next vehicle in the queue compatible with this charger
+                    let next_pos = self.waiting_queue.iter().position(|id| {
+                        self.vehicle_list
+                            .get_vehicle(id)
+                            .map(|v| charger.resolve_connector(&v.connectors).is_some())
+                            .unwrap_or(false)
+                    });
+                    if let Some(pos) = next_pos {
+                        let next_vehicle_id = self
+                            .waiting_queue
+                            .remove(pos)
+                            .expect("Position just checked");
                         let vehicle = self.vehicle_list.get_vehicle(&next_vehicle_id)?;
                         let charge_profile = self
                             .charge_profile_list

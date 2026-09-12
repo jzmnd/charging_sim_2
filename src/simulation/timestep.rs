@@ -75,7 +75,10 @@ impl TimeStepSimulation {
                             .charge_profile_list
                             .get_charge_profile(&vehicle.charge_profile_id)?;
 
-                        if let Some(charger) = self.site.get_unoccupied_charger_mut() {
+                        if let Some(charger) = self
+                            .site
+                            .get_unoccupied_charger_of_type_mut(&vehicle.connectors)
+                        {
                             let charger_id = charger.id;
                             let state = charger.start_charging_timestep(
                                 event.time,
@@ -170,7 +173,18 @@ impl TimeStepSimulation {
             // Free finished chargers and immediately start the next queued vehicle
             for charger_id in self.finished_chargers.drain(..) {
                 self.active_charger_states.remove(&charger_id);
-                if let Some(next_vehicle_id) = self.waiting_queue.pop_front() {
+                let charger = self.site.get_charger(&charger_id)?;
+                let next_pos = self.waiting_queue.iter().position(|id| {
+                    self.vehicle_list
+                        .get_vehicle(id)
+                        .map(|v| charger.resolve_connector(&v.connectors).is_some())
+                        .unwrap_or(false)
+                });
+                if let Some(pos) = next_pos {
+                    let next_vehicle_id = self
+                        .waiting_queue
+                        .remove(pos)
+                        .expect("Position just checked");
                     let vehicle = self.vehicle_list.get_vehicle(&next_vehicle_id)?;
                     let charge_profile = self
                         .charge_profile_list
