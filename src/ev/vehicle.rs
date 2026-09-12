@@ -1,5 +1,6 @@
 use crate::distributions::{DurationSampler, ItemSampler, SocSampler};
 use crate::errors::BuilderError;
+use crate::evse::ConnectorType;
 use rand::Rng;
 use uuid::Uuid;
 
@@ -17,6 +18,7 @@ pub struct Vehicle {
     pub idle_duration_s: f64,
     pub max_wait_s: u64,
     pub max_queue_length: usize,
+    pub connectors: Vec<ConnectorType>,
 }
 
 impl Vehicle {
@@ -39,6 +41,8 @@ const DEFAULT_IDLE_DURATION_SHAPE: f64 = 3.0;
 const DEFAULT_MAX_WAIT_S: u64 = 1800;
 const DEFAULT_MAX_QUEUE_LENGTH: usize = 10;
 
+const DEFAULT_CONNECTOR: ConnectorType = ConnectorType::Nacs;
+
 ///
 /// Builder used to create `Vehicle` objects.
 ///
@@ -59,6 +63,7 @@ pub struct VehicleBuilder<'a> {
     idle_duration_shape: Option<f64>,
     max_wait_s: Option<u64>,
     max_queue_length: Option<usize>,
+    connectors: Vec<ConnectorType>,
     rng: Option<&'a mut dyn Rng>,
 }
 
@@ -190,6 +195,15 @@ impl<'a> VehicleBuilder<'a> {
     }
 
     ///
+    /// Add a connector type to the vehicle. The `self.connectors` list represents
+    /// all possible connectors/adapters that the vehicle can use to charge.
+    ///
+    pub fn add_connector(&mut self, val: ConnectorType) -> &mut Self {
+        self.connectors.push(val);
+        self
+    }
+
+    ///
     /// Set the RNG used by `build` to sample any unset properties.
     /// If unset, `build` falls back to `rand::rng()`.
     ///
@@ -250,6 +264,13 @@ impl<'a> VehicleBuilder<'a> {
             }
         };
 
+        let connectors: Vec<ConnectorType>;
+        if self.connectors.is_empty() {
+            connectors = vec![DEFAULT_CONNECTOR];
+        } else {
+            connectors = self.connectors.clone();
+        }
+
         Ok(Vehicle {
             id: Uuid::new_v4(),
             name: name.to_owned(),
@@ -260,6 +281,7 @@ impl<'a> VehicleBuilder<'a> {
             idle_duration_s,
             max_wait_s: self.max_wait_s.unwrap_or(DEFAULT_MAX_WAIT_S),
             max_queue_length: self.max_queue_length.unwrap_or(DEFAULT_MAX_QUEUE_LENGTH),
+            connectors,
         })
     }
 }

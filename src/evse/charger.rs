@@ -1,6 +1,7 @@
 use crate::errors::SimulationError;
 use crate::ev::{ChargeProfile, Vehicle};
 use crate::events::{Event, EventType};
+use crate::evse::ConnectorType;
 use crate::session::Session;
 use log::debug;
 use std::collections::BinaryHeap;
@@ -48,6 +49,7 @@ pub struct Charger {
     pub max_power_kw: f64,
     pub max_current_a: f64,
     pub voltage: f64,
+    pub connectors: Vec<ConnectorType>,
     pub is_busy: bool,
 }
 
@@ -161,6 +163,7 @@ impl Charger {
 const DEFAULT_MAX_POWER_KW: f64 = 480.0;
 const DEFAULT_MAX_CURRENT_A: f64 = 1200.0;
 const DEFAULT_VOLTAGE: f64 = 400.0;
+const DEFAULT_CONNECTOR: ConnectorType = ConnectorType::Nacs;
 
 ///
 /// Builder used to create `Charger` objects.
@@ -170,6 +173,7 @@ pub struct ChargerBuilder {
     max_power_kw: Option<f64>,
     max_current_a: Option<f64>,
     voltage: Option<f64>,
+    connectors: Vec<ConnectorType>,
 }
 
 impl ChargerBuilder {
@@ -198,15 +202,31 @@ impl ChargerBuilder {
     }
 
     ///
+    /// Add a connector to the charger. A charger can have multiple connectors.
+    ///
+    pub fn add_connector(&mut self, val: ConnectorType) -> &mut Self {
+        self.connectors.push(val);
+        self
+    }
+
+    ///
     /// Build a named charger.
     ///
     pub fn build(&self, name: &str) -> Charger {
+        let connectors: Vec<ConnectorType>;
+        if self.connectors.is_empty() {
+            connectors = vec![DEFAULT_CONNECTOR];
+        } else {
+            connectors = self.connectors.clone();
+        }
+
         Charger {
             id: Uuid::new_v4(),
             name: name.to_owned(),
             max_power_kw: self.max_power_kw.unwrap_or(DEFAULT_MAX_POWER_KW),
             max_current_a: self.max_current_a.unwrap_or(DEFAULT_MAX_CURRENT_A),
             voltage: self.voltage.unwrap_or(DEFAULT_VOLTAGE),
+            connectors,
             is_busy: false,
         }
     }
