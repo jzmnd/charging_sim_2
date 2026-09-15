@@ -1,5 +1,6 @@
 use crate::containers::ChargeProfileList;
 use crate::errors::SimulationError;
+use crate::evse::ConnectorType;
 use crate::evse::{Charger, ChargerState};
 use crate::geo::Coords;
 use crate::geo::Located;
@@ -84,6 +85,29 @@ impl Site {
     ///
     pub fn get_unoccupied_charger_mut(&mut self) -> Option<&mut Charger> {
         self.chargers.iter_mut().find(|c| !c.is_busy)
+    }
+
+    ///
+    /// Get the first unoccupied charger with a particular connector type(s).
+    /// Returns None if all chargers are occupied.
+    ///
+    pub fn get_unoccupied_charger_of_type(&self, conns: &[ConnectorType]) -> Option<&Charger> {
+        self.chargers
+            .iter()
+            .find(|c| !c.is_busy && c.resolve_connector(conns).is_some())
+    }
+
+    ///
+    /// Get the first unoccupied charger with a particular connector type(s) as mutable.
+    /// Returns None if all chargers are occupied.
+    ///
+    pub fn get_unoccupied_charger_of_type_mut(
+        &mut self,
+        conns: &[ConnectorType],
+    ) -> Option<&mut Charger> {
+        self.chargers
+            .iter_mut()
+            .find(|c| !c.is_busy && c.resolve_connector(conns).is_some())
     }
 
     ///

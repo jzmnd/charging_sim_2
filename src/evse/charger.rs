@@ -1,6 +1,7 @@
 use crate::errors::SimulationError;
 use crate::ev::{ChargeProfile, Vehicle};
 use crate::events::{Event, EventType};
+use crate::evse::ConnectorType;
 use crate::session::Session;
 use log::debug;
 use std::collections::BinaryHeap;
@@ -48,6 +49,7 @@ pub struct Charger {
     pub max_power_kw: f64,
     pub max_current_a: f64,
     pub voltage: f64,
+    pub connectors: Vec<ConnectorType>,
     pub is_busy: bool,
 }
 
@@ -77,6 +79,7 @@ impl Charger {
             charge_profile.integrate_over(vehicle.soc_start, vehicle.soc_target, max_power_kw)?;
         let unplug_time =
             now + charge_outputs.duration_s.ceil() as u64 + vehicle.idle_duration_s.ceil() as u64;
+        let connector = self.resolve_connector(&vehicle.connectors);
 
         self.is_busy = true;
         debug!(
@@ -89,6 +92,7 @@ impl Charger {
             unplug_time,
             vehicle,
             self,
+            connector,
             charge_profile,
             &charge_outputs,
         ));
@@ -115,13 +119,21 @@ impl Charger {
         charge_profile: &ChargeProfile,
         sessions: &mut Vec<Session>,
     ) -> ChargerState {
+        let connector = self.resolve_connector(&vehicle.connectors);
+
         self.is_busy = true;
         debug!(
             "[t={}s] Vehicle {} starts charging on Charger {}",
             now, vehicle.id, self.id
         );
 
-        sessions.push(Session::started(now, vehicle, self, charge_profile));
+        sessions.push(Session::started(
+            now,
+            vehicle,
+            self,
+            connector,
+            charge_profile,
+        ));
         let session_idx = sessions.len() - 1;
 
         ChargerState {
@@ -156,11 +168,25 @@ impl Charger {
     pub fn actual_max_power_kw(&self) -> f64 {
         (self.max_current_a * self.voltage / 1000.0).min(self.max_power_kw)
     }
+
+    ///
+    /// Resolve which connector to use between this charger and a vehicle's
+    /// list of connectors. Chosen in the vehicle's preference order: the
+    /// first connector in `vehicle_connectors` that this charger also
+    /// supports. Returns `None` if they share no connector.
+    ///
+    pub fn resolve_connector(&self, vehicle_connectors: &[ConnectorType]) -> Option<ConnectorType> {
+        vehicle_connectors
+            .iter()
+            .copied()
+            .find(|c| self.connectors.contains(c))
+    }
 }
 
 const DEFAULT_MAX_POWER_KW: f64 = 480.0;
 const DEFAULT_MAX_CURRENT_A: f64 = 1200.0;
 const DEFAULT_VOLTAGE: f64 = 400.0;
+const DEFAULT_CONNECTOR: ConnectorType = ConnectorType::Nacs;
 
 ///
 /// Builder used to create `Charger` objects.
@@ -170,6 +196,7 @@ pub struct ChargerBuilder {
     max_power_kw: Option<f64>,
     max_current_a: Option<f64>,
     voltage: Option<f64>,
+    connectors: Vec<ConnectorType>,
 }
 
 impl ChargerBuilder {
@@ -198,15 +225,30 @@ impl ChargerBuilder {
     }
 
     ///
+    /// Add a connector to the charger. A charger can have multiple connectors.
+    ///
+    pub fn add_connector(&mut self, val: ConnectorType) -> &mut Self {
+        self.connectors.push(val);
+        self
+    }
+
+    ///
     /// Build a named charger.
     ///
     pub fn build(&self, name: &str) -> Charger {
+        let connectors = if self.connectors.is_empty() {
+            vec![DEFAULT_CONNECTOR]
+        } else {
+            self.connectors.clone()
+        };
+
         Charger {
             id: Uuid::new_v4(),
             name: name.to_owned(),
             max_power_kw: self.max_power_kw.unwrap_or(DEFAULT_MAX_POWER_KW),
             max_current_a: self.max_current_a.unwrap_or(DEFAULT_MAX_CURRENT_A),
             voltage: self.voltage.unwrap_or(DEFAULT_VOLTAGE),
+            connectors,
             is_busy: false,
         }
     }
