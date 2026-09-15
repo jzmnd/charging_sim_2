@@ -79,6 +79,7 @@ impl Charger {
             charge_profile.integrate_over(vehicle.soc_start, vehicle.soc_target, max_power_kw)?;
         let unplug_time =
             now + charge_outputs.duration_s.ceil() as u64 + vehicle.idle_duration_s.ceil() as u64;
+        let connector = self.resolve_connector(&vehicle.connectors);
 
         self.is_busy = true;
         debug!(
@@ -91,6 +92,7 @@ impl Charger {
             unplug_time,
             vehicle,
             self,
+            connector,
             charge_profile,
             &charge_outputs,
         ));
@@ -117,13 +119,21 @@ impl Charger {
         charge_profile: &ChargeProfile,
         sessions: &mut Vec<Session>,
     ) -> ChargerState {
+        let connector = self.resolve_connector(&vehicle.connectors);
+
         self.is_busy = true;
         debug!(
             "[t={}s] Vehicle {} starts charging on Charger {}",
             now, vehicle.id, self.id
         );
 
-        sessions.push(Session::started(now, vehicle, self, charge_profile));
+        sessions.push(Session::started(
+            now,
+            vehicle,
+            self,
+            connector,
+            charge_profile,
+        ));
         let session_idx = sessions.len() - 1;
 
         ChargerState {
@@ -226,12 +236,11 @@ impl ChargerBuilder {
     /// Build a named charger.
     ///
     pub fn build(&self, name: &str) -> Charger {
-        let connectors: Vec<ConnectorType>;
-        if self.connectors.is_empty() {
-            connectors = vec![DEFAULT_CONNECTOR];
+        let connectors = if self.connectors.is_empty() {
+            vec![DEFAULT_CONNECTOR]
         } else {
-            connectors = self.connectors.clone();
-        }
+            self.connectors.clone()
+        };
 
         Charger {
             id: Uuid::new_v4(),

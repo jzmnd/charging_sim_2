@@ -264,12 +264,11 @@ impl<'a> VehicleBuilder<'a> {
             }
         };
 
-        let connectors: Vec<ConnectorType>;
-        if self.connectors.is_empty() {
-            connectors = vec![DEFAULT_CONNECTOR];
+        let connectors = if self.connectors.is_empty() {
+            vec![DEFAULT_CONNECTOR]
         } else {
-            connectors = self.connectors.clone();
-        }
+            self.connectors.clone()
+        };
 
         Ok(Vehicle {
             id: Uuid::new_v4(),

@@ -1,12 +1,11 @@
-use crate::containers::{ChargeProfileList, VehicleList};
+use crate::containers::{ChargeProfileList, VehicleList, WaitingQueue};
 use crate::errors::SimulationError;
 use crate::events::{Event, EventType};
 use crate::evse::Site;
 use crate::session::Session;
 use log::{info, warn};
-use std::collections::{BinaryHeap, VecDeque};
+use std::collections::BinaryHeap;
 use std::path::Path;
-use uuid::Uuid;
 
 ///
 /// A discrete-event EV charging simulation object.
@@ -17,7 +16,7 @@ pub struct DiscreteEventSimulation {
     vehicle_list: VehicleList,
     charge_profile_list: ChargeProfileList,
     event_queue: BinaryHeap<Event>,
-    waiting_queue: VecDeque<Uuid>,
+    waiting_queue: WaitingQueue,
     sessions: Vec<Session>,
 }
 
@@ -36,7 +35,7 @@ impl DiscreteEventSimulation {
             vehicle_list,
             charge_profile_list,
             event_queue,
-            waiting_queue: VecDeque::new(),
+            waiting_queue: WaitingQueue::new(),
             sessions: Vec::new(),
         }
     }
@@ -93,17 +92,10 @@ impl DiscreteEventSimulation {
                     charger.end_charging(event.time);
 
                     // Start charging the next vehicle in the queue compatible with this charger
-                    let next_pos = self.waiting_queue.iter().position(|id| {
-                        self.vehicle_list
-                            .get_vehicle(id)
-                            .map(|v| charger.resolve_connector(&v.connectors).is_some())
-                            .unwrap_or(false)
-                    });
-                    if let Some(pos) = next_pos {
-                        let next_vehicle_id = self
-                            .waiting_queue
-                            .remove(pos)
-                            .expect("Position just checked");
+                    if let Some(next_vehicle_id) = self
+                        .waiting_queue
+                        .pop_compatible(&self.vehicle_list, charger)
+                    {
                         let vehicle = self.vehicle_list.get_vehicle(&next_vehicle_id)?;
                         let charge_profile = self
                             .charge_profile_list
@@ -118,12 +110,7 @@ impl DiscreteEventSimulation {
                     }
                 }
                 EventType::Renege => {
-                    if let Some(pos) = self
-                        .waiting_queue
-                        .iter()
-                        .position(|id| id == &event.vehicle_id)
-                    {
-                        self.waiting_queue.remove(pos);
+                    if self.waiting_queue.remove(&event.vehicle_id) {
                         let vehicle = self.vehicle_list.get_vehicle(&event.vehicle_id)?;
                         let charge_profile = self
                             .charge_profile_list

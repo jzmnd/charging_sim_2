@@ -1,4 +1,4 @@
-use crate::containers::{ChargeProfileList, VehicleList};
+use crate::containers::{ChargeProfileList, VehicleList, WaitingQueue};
 use crate::errors::SimulationError;
 use crate::events::Event;
 use crate::events::EventType;
@@ -6,7 +6,7 @@ use crate::evse::{ChargerState, ChargerStatus, Site};
 use crate::session::Session;
 use log::info;
 use rustc_hash::FxHashMap;
-use std::collections::{BinaryHeap, VecDeque};
+use std::collections::BinaryHeap;
 use std::path::Path;
 use uuid::Uuid;
 
@@ -23,7 +23,7 @@ pub struct TimeStepSimulation {
     vehicle_list: VehicleList,
     charge_profile_list: ChargeProfileList,
     event_queue: BinaryHeap<Event>,
-    waiting_queue: VecDeque<Uuid>,
+    waiting_queue: WaitingQueue,
     sessions: Vec<Session>,
     current_time: u64,
     active_charger_states: FxHashMap<Uuid, ChargerState>,
@@ -45,7 +45,7 @@ impl TimeStepSimulation {
             vehicle_list,
             charge_profile_list,
             event_queue,
-            waiting_queue: VecDeque::new(),
+            waiting_queue: WaitingQueue::new(),
             sessions: Vec::new(),
             current_time: 0,
             active_charger_states: FxHashMap::default(),
@@ -104,12 +104,7 @@ impl TimeStepSimulation {
                         }
                     }
                     EventType::Renege => {
-                        if let Some(pos) = self
-                            .waiting_queue
-                            .iter()
-                            .position(|id| id == &event.vehicle_id)
-                        {
-                            self.waiting_queue.remove(pos);
+                        if self.waiting_queue.remove(&event.vehicle_id) {
                             let vehicle = self.vehicle_list.get_vehicle(&event.vehicle_id)?;
                             let charge_profile = self
                                 .charge_profile_list
@@ -174,17 +169,10 @@ impl TimeStepSimulation {
             for charger_id in self.finished_chargers.drain(..) {
                 self.active_charger_states.remove(&charger_id);
                 let charger = self.site.get_charger(&charger_id)?;
-                let next_pos = self.waiting_queue.iter().position(|id| {
-                    self.vehicle_list
-                        .get_vehicle(id)
-                        .map(|v| charger.resolve_connector(&v.connectors).is_some())
-                        .unwrap_or(false)
-                });
-                if let Some(pos) = next_pos {
-                    let next_vehicle_id = self
-                        .waiting_queue
-                        .remove(pos)
-                        .expect("Position just checked");
+                if let Some(next_vehicle_id) = self
+                    .waiting_queue
+                    .pop_compatible(&self.vehicle_list, charger)
+                {
                     let vehicle = self.vehicle_list.get_vehicle(&next_vehicle_id)?;
                     let charge_profile = self
                         .charge_profile_list
