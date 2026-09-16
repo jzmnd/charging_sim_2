@@ -1,0 +1,45 @@
+name: Rust CI PR Checks
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+# Automatically cancel in-progress runs if a new commit is pushed to the PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  fmt:
+    name: Rustfmt Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v7
+      - name: Setup Rust Toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v2
+        with:
+          components: rustfmt
+      - name: Check Formatting
+        run: cargo fmt --all --check
+
+  test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v7
+      - name: Setup Rust Toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v2
+        with:
+          components: clippy
+      - name: Run Fast Compiler Check
+        run: cargo check --workspace --all-targets
+      - name: Run Clippy Lints
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Run Test Suite
+        run: cargo test --workspace --all-targets
