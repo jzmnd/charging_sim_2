@@ -44,14 +44,14 @@ This is a simulation of EV charging at a single site, structured as a library cr
 `DiscreteEventSimulation` owns:
 
 - `event_queue: BinaryHeap<Event>` — priority queue of pending events. `Event::Ord` is **reversed on `time`**, so the max-heap behaves as a min-heap by time. There is no clock variable; "now" is whatever event you just popped.
-- `waiting_queue: VecDeque<Uuid>` — FIFO of vehicles that arrived while all chargers were busy.
+- `waiting_queue: WaitingQueue` — FIFO-ish queue of vehicles that arrived while no compatible charger was free (see Connector types below).
 - `site: Site` — chargers and their busy state.
 - `sessions: Vec<Session>` — append-only output log.
 
 `run` pops events until the queue is empty. Three event types:
 
-- `Arrival` → grab the first unoccupied charger (`Site::get_unoccupied_charger_mut`, linear scan), call `Charger::start_charging_discrete`. If none free, push the vehicle ID onto `waiting_queue` (or balk if the queue is already at `max_queue_length`).
-- `Unplug` → mark the charger free, then immediately pull the head of `waiting_queue` (if any) and start it on this charger at the current event time.
+- `Arrival` → grab the first unoccupied charger compatible with the vehicle's connectors (`Site::get_unoccupied_charger_of_type_mut(&vehicle.connectors)`, linear scan), call `Charger::start_charging_discrete`. If none free, push the vehicle ID onto `waiting_queue` (or balk if the queue is already at `max_queue_length`).
+- `Unplug` → mark the charger free, then pull the first queued vehicle compatible with this charger's connectors (`WaitingQueue::pop_compatible`, not necessarily the head) and start it on this charger at the current event time.
 - `Renege` → remove the vehicle from the `waiting_queue` if present and record a reneged session. Renege events are pre-seeded at `arrival_time + max_wait_s` by `VehicleList::generate_arrival_events` and become no-ops once the vehicle has been served.
 
 `Charger::start_charging_discrete` integrates the entire session up-front using `ChargeProfile::integrate_over(soc_start, soc_target, max_power_kw)`, where `max_power_kw` is `Charger::actual_max_power_kw()` (the lesser of `max_power_kw` and `max_current_a * voltage / 1000`). It records the `Session` and **pushes the matching `Unplug` event back onto the heap** at `now + charge_duration + idle_duration`. This self-scheduling is what makes the simulation progress without a fixed time step.
@@ -103,17 +103,25 @@ For bulk arrival generation, `ArrivalSampler` (`distributions/arrival_distr.rs`)
 
 `VehicleBuilder` is parameterised by a lifetime: `VehicleBuilder<'a>` holds an optional `&'a mut dyn Rng`. Configure it via `.rng(&mut my_rng)`; if unset, `build` falls back to a fresh `rand::rng()` (thread-local) per call. The sample functions in `src/distributions/*` all take an explicit `rng: &mut R` (or `&mut dyn Rng` for `ArrivalSampler::sample_arrivals`). For reproducibility, pass a seeded `StdRng::seed_from_u64(...)` instead — no library changes needed. Note: `rand` 0.10 dropped `RngCore` from its crate root; use `rand::Rng` for trait objects/bounds.
 
+### Connector types
+
+Both `Vehicle` and `Charger` carry a `connectors: Vec<ConnectorType>` (`src/evse/connector.rs`: `Ccs1`, `Ccs2`, `Chademo`, `Gbt`, `Nacs`). `Charger::resolve_connector(&vehicle_connectors)` picks the first connector in the *vehicle's* preference order that the charger also supports, returning `None` if they share none. This gates charger assignment in both engines (`Site::get_unoccupied_charger_of_type[_mut]`) and queue dequeuing (`WaitingQueue::pop_compatible`) — an incompatible vehicle at the front of the waiting queue no longer blocks compatible vehicles behind it.
+
 ### Containers
 
-`VehicleList` and `ChargeProfileList` (in `src/containers/`) are `Vec` + `FxHashMap<Uuid, usize>` index pairs that give O(1) lookup by ID. They own their elements; both simulations borrow from them by ID during the run loop. `VehicleList::generate_arrival_events` seeds the event queue (arrivals and the corresponding renege events) at simulation start — both `DiscreteEventSimulation::new` and `TimeStepSimulation::new` call it.
+`VehicleList`, `ChargeProfileList`, `SiteList`, and `LocationList` (in `src/containers/`) are `Vec` + `FxHashMap<Uuid, usize>` index pairs that give O(1) lookup by ID. They own their elements; both simulations borrow from them by ID during the run loop. `VehicleList::generate_arrival_events` seeds the event queue (arrivals and the corresponding renege events) at simulation start — both `DiscreteEventSimulation::new` and `TimeStepSimulation::new` call it. `WaitingQueue` (`src/containers/waiting_queue.rs`) wraps a `VecDeque<Uuid>` with connector-aware removal (see Connector types above).
 
-Both containers also `impl FromIterator` and `impl Extend` for their element types, so you can `vehicles.into_iter().collect::<VehicleList>()` or grow a list incrementally with `list.extend(...)`.
+These containers also `impl FromIterator` and `impl Extend` for their element types, so you can `vehicles.into_iter().collect::<VehicleList>()` or grow a list incrementally with `list.extend(...)`.
 
 Lookups (`get_vehicle`, `get_charge_profile`, `get_id_by_name`) return `Result<&T, SimulationError>`.
 
 ### Errors
 
 All fallible operations return `Result<_, SimulationError>` or `Result<_, BuilderError>` (both `thiserror`-derived, in `src/errors.rs`). `ChargeProfile::integrate_over` / `power_at`, the container lookups, and `Site::get_charger` / `get_charger_mut` are the main sources of `SimulationError`.
+
+### Geolocation
+
+`src/geo.rs` is a standalone leaf module (no subdirectory) with Haversine-based geo helpers, currently unused by either simulation engine: `Coords` (lat/lon, validated to ±90/±180 via `Coords::try_new`), the `Located` trait (`distance_to`/`time_to`/`energy_to`, implemented by anything with a fixed location), and `Location` (an id + name + `Coords`, e.g. an origin/destination). Distances are in miles; `time_to` divides by an average speed, `energy_to` multiplies by an EV consumption rate (EVC).
 
 ### Module layout convention
 
